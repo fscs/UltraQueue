@@ -189,6 +189,17 @@ class QueueServiceTest {
     }
 
     @Test
+    @DisplayName("finished a song re-numbers songs")
+    void testRenumberAfterFinish() {
+        queueService.addSong("user1", song1.id(), false);
+        queueService.addSong("user2", song2.id(), false);
+        queueService.markFinished(song1.id());
+
+        assertThat(queueService.getNextSongTitle()).isEqualTo(song2.title());
+        assertThat(queueService.getQueueWithEstimates("user1").getFirst().position()).isOne();
+    }
+
+    @Test
     @DisplayName("song may not repeat within 5 minutes")
     void testSongRepetitionInterval() {
         // Given a 5 minute interval

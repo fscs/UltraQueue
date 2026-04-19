@@ -27,7 +27,7 @@ public class QueueService {
     private final ReentrantLock lock = new ReentrantLock(); // protects queue + log
 
     // In‑memory holders
-    private final List<QueueEntry> queue = new ArrayList<>(); // ordered FIFO
+    private final List<QueueEntry> queue = new LinkedList<>(); // ordered FIFO
     private final List<PlayedSongLog> playedLog = new ArrayList<>();
     private final Map<String, UUID> userToEntry = new ConcurrentHashMap<>(); // cookie → entry id
 
@@ -93,13 +93,17 @@ public class QueueService {
                 throw new AccessDeniedException("Cannot delete another user’s entry");
             }
             queue.remove(entry);
-            // re‑number positions
-            for (int i = 0; i < queue.size(); i++) {
-                queue.get(i).setPosition(i + 1);
-            }
+            reOrderPositions();
             userToEntry.entrySet().removeIf(e -> e.getValue().equals(entryId));
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void reOrderPositions() {
+        // TODO move to Fachobjekt
+        for (int i = 0; i < queue.size(); i++) {
+            queue.get(i).setPosition(i + 1);
         }
     }
 
@@ -139,6 +143,7 @@ public class QueueService {
             });
             // remove the entry from the queue
             queue.removeIf(e -> e.getSong().id().equals(songId));
+            reOrderPositions();
         } finally {
             lock.unlock();
         }
