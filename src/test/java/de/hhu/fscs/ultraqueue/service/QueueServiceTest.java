@@ -9,7 +9,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +24,8 @@ class QueueServiceTest {
 
     private QueueService queueService;
     private UltraQueueProperties props;
+    private Clock clock;
+    private Instant baseTime;
 
     private Song song1;
     private Song song2;
@@ -32,7 +37,13 @@ class QueueServiceTest {
                 .maxSongsPerUser(1)
                 .minIntervalMinutes(0)
                 .build();
-        queueService = new QueueService(props, catalog);
+        
+        baseTime = Instant.parse("2024-05-20T10:00:00Z");
+        clock = Mockito.mock(Clock.class);
+        when(clock.instant()).thenReturn(baseTime);
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+
+        queueService = new QueueService(props, catalog, clock);
 
         song1 = new Song.Builder()
                 .title("Song 1")
@@ -99,5 +110,38 @@ class QueueServiceTest {
         queueService.addSong("user1", song2.id());
 
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 2");
+    }
+
+    @Test
+    @DisplayName("song may not repeat within 5 minutes")
+    void testSongRepetitionInterval() {
+        // Given a 5 minute interval
+        props = new UltraQueuePropertiesBuilder()
+                .minIntervalMinutes(5)
+                .build();
+        // re-setup queueService with new props
+        SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
+        UUID song1Id = song1.id();
+        when(catalog.findById(song1Id)).thenReturn(Optional.of(song1));
+        queueService = new QueueService(props, catalog, clock);
+
+        // When song 1 is added and finished at baseTime
+        queueService.addSong("user1", song1Id);
+        queueService.markFinished(song1Id);
+
+        // Then adding it again 4 minutes later fails
+        Instant fourMinutesLater = baseTime.plus(Duration.ofMinutes(4));
+        when(clock.instant()).thenReturn(fourMinutesLater);
+
+        assertThatThrownBy(() -> queueService.addSong("user2", song1Id))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("wait");
+
+        // But adding it 5 minutes later works
+        Instant fiveMinutesLater = baseTime.plus(Duration.ofMinutes(5));
+        when(clock.instant()).thenReturn(fiveMinutesLater);
+
+        queueService.addSong("user2", song1Id);
+        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
     }
 }

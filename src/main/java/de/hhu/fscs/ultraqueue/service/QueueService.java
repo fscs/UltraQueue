@@ -7,9 +7,11 @@ import de.hhu.fscs.ultraqueue.exception.NotFoundException;
 import de.hhu.fscs.ultraqueue.model.PlayedSongLog;
 import de.hhu.fscs.ultraqueue.model.QueueEntry;
 import de.hhu.fscs.ultraqueue.model.Song;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -21,6 +23,7 @@ public class QueueService {
 
     private final UltraQueueProperties props;
     private final SongCatalogService catalog;
+    private final Clock clock;
     private final ReentrantLock lock = new ReentrantLock(); // protects queue + log
 
     // In‑memory holders
@@ -28,9 +31,15 @@ public class QueueService {
     private final List<PlayedSongLog> playedLog = new ArrayList<>();
     private final Map<String, UUID> userToEntry = new ConcurrentHashMap<>(); // cookie → entry id // TODO this only allows for 0 or 1 song per user
 
+    @Autowired
     public QueueService(UltraQueueProperties props, SongCatalogService catalog) {
+        this(props, catalog, Clock.systemDefaultZone());
+    }
+
+    public QueueService(UltraQueueProperties props, SongCatalogService catalog, Clock clock) {
         this.props = props;
         this.catalog = catalog;
+        this.clock = clock;
     }
 
     public void addSong(String userId, UUID songId) {
@@ -48,7 +57,7 @@ public class QueueService {
                 throw new BusinessException("Song already in queue");
             }
             
-            Instant now = Instant.now();
+            Instant now = Instant.now(clock);
             assureSongNotRecentlyPlayed(songId, now);
 
             QueueEntry entry = new QueueEntry(UUID.randomUUID(), song, userId, queue.size() + 1);
@@ -114,7 +123,7 @@ public class QueueService {
     public void markFinished(UUID songId) {
         lock.lock();
         try {
-            Instant now = Instant.now();
+            Instant now = Instant.now(clock);
             // remember song to prevent it being sung again in the near future
             playedLog.add(new PlayedSongLog(songId, now));
             // remove the entry from the user's list of songs
@@ -150,7 +159,7 @@ public class QueueService {
         lock.lock();
         try {
             List<QueueEntryDto> result = new ArrayList<>();
-            Instant now = Instant.now();
+            Instant now = Instant.now(clock);
             long cumulatedSec = 0;
             for (QueueEntry e : queue) {
                 cumulatedSec += e.getSong().getLengthSeconds();
