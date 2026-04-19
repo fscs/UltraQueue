@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,13 +37,13 @@ public class QueueController {
     @PostMapping("/add")
     public String addSong(@RequestParam @NotBlank String songId,
                           HttpServletRequest request,
-                          Model model) {
+                          RedirectAttributes redirectAttributes) {
         String userId = UserContext.getCurrentUserId(request);
         try {
             queueService.addSong(userId, UUID.fromString(songId));
-            model.addAttribute("flash", "Song added to your queue.");
+            redirectAttributes.addFlashAttribute("flash", "Song added to your queue.");
         } catch (BusinessException ex) {
-            model.addAttribute("error", ex.getMessage());
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
         }
         return "redirect:/queue";
     }
@@ -51,10 +52,15 @@ public class QueueController {
     @PostMapping("/remove/{entryId}")
     public String remove(@PathVariable UUID entryId,
                          HttpServletRequest request,
-                         Model model) {
+                         RedirectAttributes redirectAttributes) {
         String userId = UserContext.getCurrentUserId(request);
         boolean isAdmin = request.isUserInRole("ADMIN");
-        queueService.removeEntry(userId, entryId, isAdmin);
+        try {
+            queueService.removeEntry(userId, entryId, isAdmin);
+            redirectAttributes.addFlashAttribute("flash", "Entry removed.");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/queue";
     }
 
@@ -63,9 +69,14 @@ public class QueueController {
     public String replace(@PathVariable UUID entryId,
                           @RequestParam @NotBlank String newSongId,
                           HttpServletRequest request,
-                          Model model) {
+                          RedirectAttributes redirectAttributes) {
         String userId = UserContext.getCurrentUserId(request);
-        queueService.replaceEntry(userId, entryId, UUID.fromString(newSongId));
+        try {
+            queueService.replaceEntry(userId, entryId, UUID.fromString(newSongId));
+            redirectAttributes.addFlashAttribute("flash", "Entry replaced.");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/queue";
     }
 }
