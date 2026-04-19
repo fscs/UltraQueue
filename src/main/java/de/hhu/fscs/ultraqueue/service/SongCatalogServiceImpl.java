@@ -80,9 +80,9 @@ public class SongCatalogServiceImpl implements SongCatalogService {
 
             Path txt = maybeTxt.get();
             Song song = SongTxtParser.parse(txt);
-            songById.put(song.getId(), song);
-            String key = makeTitleArtistKey(song.getTitle(), song.getArtist());
-            titleArtistIndex.put(key, song.getId());
+            songById.put(song.id(), song);
+            String key = makeTitleArtistKey(song.title(), song.artist());
+            titleArtistIndex.put(key, song.id());
 
         } catch (IOException e) {
             log.warn("Unable to read directory {} – skipping ({}).", songDir, e.getMessage());
@@ -117,8 +117,8 @@ public class SongCatalogServiceImpl implements SongCatalogService {
         String lowered = query.toLowerCase();
 
         List<Song> filtered = songById.values().stream()
-                .filter(s -> s.getTitle().toLowerCase().contains(lowered) ||
-                        s.getArtist().toLowerCase().contains(lowered))
+                .filter(s -> s.title().toLowerCase().contains(lowered) ||
+                        s.artist().toLowerCase().contains(lowered))
                 .collect(Collectors.toList());
 
         if (pageable.getSort().isSorted()) {
@@ -160,14 +160,14 @@ public class SongCatalogServiceImpl implements SongCatalogService {
     // Helper – build a comparator from a Spring Sort object.
     // -----------------------------------------------------------------
     private Comparator<Song> createComparator(Sort sort) {
-        Comparator<Song> comparator = Comparator.comparing(Song::getTitle, String.CASE_INSENSITIVE_ORDER);
+        Comparator<Song> comparator = Comparator.comparing(Song::title, String.CASE_INSENSITIVE_ORDER);
         for (Sort.Order order : sort) {
             Comparator<Song> fieldComparator;
             switch (order.getProperty().toLowerCase()) {
-                case "title" -> fieldComparator = Comparator.comparing(Song::getTitle, String.CASE_INSENSITIVE_ORDER);
-                case "artist" -> fieldComparator = Comparator.comparing(Song::getArtist, String.CASE_INSENSITIVE_ORDER);
+                case "title" -> fieldComparator = Comparator.comparing(Song::title, String.CASE_INSENSITIVE_ORDER);
+                case "artist" -> fieldComparator = Comparator.comparing(Song::artist, String.CASE_INSENSITIVE_ORDER);
                 case "lengthsec", "length" -> fieldComparator = Comparator.comparingLong(Song::getLengthSeconds);
-                case "year" -> fieldComparator = Comparator.comparing(s -> s.getYear() == null ? 0 : s.getYear());
+                case "year" -> fieldComparator = Comparator.comparing(s -> s.year() == null ? 0 : s.year());
                 default -> {
                     // unknown field – ignore it
                     continue;

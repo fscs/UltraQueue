@@ -83,11 +83,11 @@ class SongTxtParserTest {
 
         Song song = SongTxtParser.parseLines(lines);
 
-        assertThat(song.getTitle()).isEqualTo("Anspruchlos dürch die Nacht");
-        assertThat(song.getArtist()).isEqualTo("Schweinemensakapelle");
-        assertThat(song.getLanguage()).isEqualTo("German");
-        assertThat(song.getYear()).isEqualTo(2015);
-        assertThat(song.getGenre()).isEqualTo("Pop");
+        assertThat(song.title()).isEqualTo("Anspruchlos dürch die Nacht");
+        assertThat(song.artist()).isEqualTo("Schweinemensakapelle");
+        assertThat(song.language()).isEqualTo("German");
+        assertThat(song.year()).isEqualTo(2015);
+        assertThat(song.genre()).isEqualTo("Pop");
     }
 
 
@@ -102,6 +102,6 @@ class SongTxtParserTest {
         List<String> lines = List.of(txt.split("\\R"));
         Song song = SongTxtParser.parseLines(lines);
 
-        assertThat(song.getLength()).isEqualTo(Duration.ofSeconds(3 * 60));
+        assertThat(song.length()).isEqualTo(Duration.ofSeconds(3 * 60));
     }
 }

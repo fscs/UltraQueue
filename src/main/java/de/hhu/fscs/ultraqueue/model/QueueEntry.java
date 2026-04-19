@@ -65,8 +65,8 @@ public final class QueueEntry {
     public String toString() {
         return "QueueEntry{id=%s, title='%s', artist='%s', user=%s, pos=%d}"
                 .formatted(id,
-                        song.getTitle(),
-                        song.getArtist(),
+                        song.title(),
+                        song.artist(),
                         userId,
                         position);
     }

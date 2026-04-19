@@ -25,8 +25,8 @@ public record QueueEntryDto(
                 .format(estimate);
         boolean mine = e.getUserId().equals(currentUserId);
         return new QueueEntryDto(e.getId(),
-                e.getSong().getTitle(),
-                e.getSong().getArtist(),
+                e.getSong().title(),
+                e.getSong().artist(),
                 e.getPosition(),
                 fmt,
                 mine);

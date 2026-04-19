@@ -44,7 +44,7 @@ public class QueueService {
             Song song = catalog.findById(songId)
                     .orElseThrow(() -> new NotFoundException("Song not found"));
             
-            if (queue.stream().anyMatch(e -> e.getSong().getId().equals(songId))) {
+            if (queue.stream().anyMatch(e -> e.getSong().id().equals(songId))) {
                 throw new BusinessException("Song already in queue");
             }
             
@@ -115,11 +115,11 @@ public class QueueService {
             Instant now = Instant.now();
             playedLog.add(new PlayedSongLog(songId, now));
             // also remove the entry from the queue if it is still there
-            queue.removeIf(e -> e.getSong().getId().equals(songId));
+            queue.removeIf(e -> e.getSong().id().equals(songId));
             // clean up user→entry map
             userToEntry.entrySet().removeIf(e -> {
                 QueueEntry qe = findEntry(e.getValue());
-                return qe != null && qe.getSong().getId().equals(songId);
+                return qe != null && qe.getSong().id().equals(songId);
             });
         } finally {
             lock.unlock();
@@ -130,7 +130,7 @@ public class QueueService {
         lock.lock();
         try {
             if (queue.isEmpty()) return "";
-            return queue.getFirst().getSong().getTitle();
+            return queue.getFirst().getSong().title();
         } finally {
             lock.unlock();
         }
@@ -168,6 +168,6 @@ public class QueueService {
         return catalog.findByTitleArtist(title, artist)
                 .orElseThrow(() -> new NotFoundException(
                         "Song not found in catalog: %s – %s".formatted(title, artist)))
-                .getId();
+                .id();
     }
 }
