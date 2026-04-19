@@ -47,7 +47,7 @@ public class QueueService {
         try {
             // enforce “max songs per user”
             if (userToEntry.containsKey(userId) && props.maxSongsPerUser() == 1) {
-                throw new BusinessException("You already have a song in the queue"); // TODO not rendered to frontend
+                throw new BusinessException("You already have a song in the queue");
             }
             
             Song song = catalog.findById(songId)

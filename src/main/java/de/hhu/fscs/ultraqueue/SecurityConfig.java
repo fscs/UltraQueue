@@ -27,7 +27,7 @@ public class SecurityConfig {
     @Order(1) // make sure admin URLs are evaluated before the generic rule
     public SecurityFilterChain adminChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/admin/**", "/queue/remove/**")   // admin‑only ops
+                .securityMatcher("/admin/**")   // admin‑only ops
                 .authorizeHttpRequests(auth -> auth.anyRequest().hasRole("ADMIN"))
                 .httpBasic(Customizer.withDefaults())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/admin/**")); // CSRF not needed for Basic Auth

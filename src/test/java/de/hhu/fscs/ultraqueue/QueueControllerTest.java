@@ -111,8 +111,9 @@ class QueueControllerTest {
                     .thenReturn("abc-123");
 
             UUID entryId = UUID.randomUUID();
+
             mvc.perform(post("/queue/remove/" + entryId)
-                            .with(user("admin").roles("ADMIN"))
+                            .with(user("abc-123"))
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(flash().attribute("flash", "Entry removed."));
