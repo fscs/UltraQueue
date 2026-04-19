@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * and a corresponding getter – the class is deliberately tiny so you can
  * extend it without breaking existing code.
  */
-@ResponseStatus(HttpStatus.NOT_FOUND)          // ← automatic 404 → client
+@ResponseStatus(HttpStatus.NOT_FOUND)
 public class NotFoundException extends RuntimeException {
 
     /** Simple constructor – only a message is required. */

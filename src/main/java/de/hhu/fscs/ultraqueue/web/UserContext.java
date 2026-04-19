@@ -12,7 +12,9 @@ import org.springframework.web.util.WebUtils;
 @Component
 public class UserContext {
 
-    public static final String COOKIE_NAME = "UQUSER";
+    public static final String COOKIE_NAME = "ULTRAQUEUE_USERID";
+
+    private UserContext() { /* utility class */ }
 
     /**
      * Returns the UUID stored in the UQUSER cookie, or throws

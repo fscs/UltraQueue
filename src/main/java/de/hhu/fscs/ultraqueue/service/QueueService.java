@@ -26,7 +26,7 @@ public class QueueService {
     // In‑memory holders
     private final List<QueueEntry> queue = new ArrayList<>(); // ordered FIFO
     private final List<PlayedSongLog> playedLog = new ArrayList<>();
-    private final Map<String, UUID> userToEntry = new ConcurrentHashMap<>(); // cookie → entry id
+    private final Map<String, UUID> userToEntry = new ConcurrentHashMap<>(); // cookie → entry id // TODO this only allows for 0 or 1 song per user
 
     public QueueService(UltraQueueProperties props, SongCatalogService catalog) {
         this.props = props;
@@ -36,33 +36,22 @@ public class QueueService {
     public void addSong(String userId, UUID songId) {
         lock.lock();
         try {
-            // 1. enforce “max songs per user”
+            // enforce “max songs per user”
             if (userToEntry.containsKey(userId) && props.maxSongsPerUser() == 1) {
-                throw new BusinessException("You already have a song in the queue");
+                throw new BusinessException("You already have a song in the queue"); // TODO not rendered to frontend
             }
-            // 2. song must exist
+            
             Song song = catalog.findById(songId)
                     .orElseThrow(() -> new NotFoundException("Song not found"));
-            // 3. song must not already be queued
+            
             if (queue.stream().anyMatch(e -> e.getSong().getId().equals(songId))) {
                 throw new BusinessException("Song already in queue");
             }
-            // 4. 60‑minute repeat rule
+            
             Instant now = Instant.now();
-            PlayedSongLog recent = playedLog.stream()
-                    .filter(l -> l.songId().equals(songId))
-                    .max(Comparator.comparing(PlayedSongLog::playedAt))
-                    .orElse(null);
-            if (recent != null) {
-                long minutes = Duration.between(recent.playedAt(), now).toMinutes();
-                if (minutes < props.minIntervalMinutes()) {
-                    throw new BusinessException(
-                            "Song was sung %d minutes ago – wait %d more minutes".formatted(
-                                    minutes, props.minIntervalMinutes() - minutes));
-                }
-            }
-            // 5. all good → create entry
-            QueueEntry entry = new QueueEntry(UUID.randomUUID(), song, userId, now, queue.size() + 1);
+            assureSongNotRecentlyPlayed(songId, now);
+
+            QueueEntry entry = new QueueEntry(UUID.randomUUID(), song, userId, queue.size() + 1);
             queue.add(entry);
             userToEntry.put(userId, entry.getId());
         } finally {
@@ -70,7 +59,22 @@ public class QueueService {
         }
     }
 
-    public void removeEntry(String userId, UUID entryId, boolean isAdmin) {
+    private void assureSongNotRecentlyPlayed(UUID songId, Instant now) {
+        PlayedSongLog recent = playedLog.stream()
+                .filter(l -> l.songId().equals(songId))
+                .max(Comparator.comparing(PlayedSongLog::playedAt))
+                .orElse(null);
+        if (recent != null) {
+            long minutes = Duration.between(recent.playedAt(), now).toMinutes();
+            if (minutes < props.minIntervalMinutes()) {
+                throw new BusinessException(
+                        "Song was sung %d minutes ago – wait %d more minutes".formatted(
+                                minutes, props.minIntervalMinutes() - minutes));
+            }
+        }
+    }
+
+    public void removeEntry(String userId, UUID entryId, boolean isAdmin) { // TODO not working from frontend
         lock.lock();
         try {
             QueueEntry entry = findEntry(entryId);
@@ -88,7 +92,7 @@ public class QueueService {
         }
     }
 
-    public void replaceEntry(String userId, UUID entryId, UUID newSongId) {
+    public void replaceEntry(String userId, UUID entryId, UUID newSongId) { // TODO not working from frontend
         lock.lock();
         try {
             QueueEntry old = findEntry(entryId);
@@ -132,9 +136,6 @@ public class QueueService {
         }
     }
 
-    // -----------------------------------------------------------------
-    // INTERNAL helpers
-    // -----------------------------------------------------------------
     private QueueEntry findEntry(UUID id) {
         return queue.stream()
                 .filter(e -> e.getId().equals(id))
@@ -161,7 +162,7 @@ public class QueueService {
 
     /**
      * Resolve an incoming title+artist pair to the internal Song UUID.
-     * Throws NotFoundException if the song does not exist.
+     * @throws NotFoundException if the song does not exist.
      */
     public UUID resolveSongId(String title, String artist) {
         return catalog.findByTitleArtist(title, artist)

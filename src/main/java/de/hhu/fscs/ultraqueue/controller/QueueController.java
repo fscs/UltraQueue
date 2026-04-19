@@ -29,7 +29,7 @@ public class QueueController {
         String userId = UserContext.getCurrentUserId(request);
         List<QueueEntryDto> entries = queueService.getQueueWithEstimates(userId);
         model.addAttribute("queue", entries);
-        return "queue"; // src/main/resources/templates/queue.html
+        return "queue";
     }
 
     /** Add a song to the *current* user’s queue (POST from catalogue). */

@@ -8,7 +8,7 @@ import java.util.UUID;
  * Immutable value object that holds the meta‑information of a single UltraStar song.
  * Instances are created once during the start‑up scan and never modified.
  */
-public final class Song {
+public final class Song { // TODO transform to record
 
     private final UUID id;
     private final String title;
@@ -28,7 +28,9 @@ public final class Song {
         this.genre = builder.genre;
     }
 
-    /** Builder pattern – makes construction from the parser tidy. */
+    /**
+     * Builder pattern – makes construction from the parser tidy.
+     */
     public static class Builder {
         private final UUID id = UUID.randomUUID();
         private String title;
@@ -38,26 +40,71 @@ public final class Song {
         private Duration length;
         private String genre;
 
-        public Builder title(String title)   { this.title = title; return this; }
-        public Builder artist(String artist) { this.artist = artist; return this; }
-        public Builder language(String language) { this.language = language; return this; }
-        public Builder year(Integer year) { this.year = year; return this; }
-        public Builder length(Duration length) { this.length = length; return this; }
-        public Builder genre(String genre) { this.genre = genre; return this; }
+        public Builder title(String title) {
+            this.title = title;
+            return this;
+        }
 
-        public Song build() { return new Song(this); }
+        public Builder artist(String artist) {
+            this.artist = artist;
+            return this;
+        }
+
+        public Builder language(String language) {
+            this.language = language;
+            return this;
+        }
+
+        public Builder year(Integer year) {
+            this.year = year;
+            return this;
+        }
+
+        public Builder length(Duration length) {
+            this.length = length;
+            return this;
+        }
+
+        public Builder genre(String genre) {
+            this.genre = genre;
+            return this;
+        }
+
+        public Song build() {
+            return new Song(this);
+        }
     }
 
     // -----------------------------------------------------------------
     // Getters (no setters – immutable)
     // -----------------------------------------------------------------
-    public UUID getId()           { return id; }
-    public String getTitle()      { return title; }
-    public String getArtist()     { return artist; }
-    public String getLanguage()   { return language; }
-    public Integer getYear()      { return year; }
-    public Duration getLength()   { return length; }
-    public String getGenre()      { return genre; }
+    public UUID getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getArtist() {
+        return artist;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public Duration getLength() {
+        return length;
+    }
+
+    public String getGenre() {
+        return genre;
+    }
 
     // -----------------------------------------------------------------
     // Convenience methods for UI / API
@@ -72,7 +119,9 @@ public final class Song {
     }
 
     @Override
-    public int hashCode() { return id.hashCode(); }
+    public int hashCode() {
+        return id.hashCode();
+    }
 
     @Override
     public String toString() {
