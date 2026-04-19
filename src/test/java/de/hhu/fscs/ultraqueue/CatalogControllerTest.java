@@ -12,10 +12,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -41,4 +44,27 @@ class CatalogControllerTest {
         mvc.perform(get("/"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void testCatalogPageWithTwoSongs() throws Exception {
+        Song song1 = new Song.Builder()
+                .title("Song One")
+                .artist("Artist One")
+                .length(Duration.ofSeconds(180))
+                .build();
+
+        Song song2 = new Song.Builder()
+                .title("Song Two")
+                .artist("Artist Two")
+                .length(Duration.ofSeconds(200))
+                .build();
+
+        Mockito.when(catalog.findAll(any())).thenReturn(new PageImpl<>(Arrays.asList(song1, song2)));
+
+        mvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Song One")))
+                .andExpect(content().string(containsString("Song Two")));
+    }
 }
+

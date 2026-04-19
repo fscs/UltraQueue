@@ -14,7 +14,10 @@
   <tr>
     <th><a th:href="@{/(page=0, sort='title', dir=${dir == 'ASC' ? 'DESC' : 'ASC'})}">Title</a></th>
     <th><a th:href="@{/(page=0, sort='artist', dir=${dir == 'ASC' ? 'DESC' : 'ASC'})}">Artist</a></th>
-    <th>Length</th>
+    <th><a th:href="@{/(page=0, sort='language', dir=${dir == 'ASC' ? 'DESC' : 'ASC'})}">Language</a></th>
+    <th><a th:href="@{/(page=0, sort='genre', dir=${dir == 'ASC' ? 'DESC' : 'ASC'})}">Genre</a></th>
+    <th><a th:href="@{/(page=0, sort='year', dir=${dir == 'ASC' ? 'DESC' : 'ASC'})}">Year</a></th>
+    <th>Est. Length</th>
     <th>Action</th>
   </tr>
   </thead>
@@ -22,6 +25,9 @@
   <tr th:each="song : ${songs}">
     <td th:text="${song.title}"></td>
     <td th:text="${song.artist}"></td>
+    <td th:text="${song.language}"></td>
+    <td th:text="${song.genre}"></td>
+    <td th:text="${song.year}"></td>
     <td th:text="${#numbers.formatInteger(song.lengthSeconds / 60, 1) + ':' + #numbers.formatInteger(song.lengthSeconds % 60, 2)}"></td>
     <td>
       <form th:action="@{/queue/add}" method="post">
