@@ -1,5 +1,6 @@
 package de.hhu.fscs.ultraqueue.controller;
 
+import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.model.Song;
 import de.hhu.fscs.ultraqueue.service.SongCatalogService;
 import jakarta.validation.constraints.Min;
@@ -8,7 +9,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/")
@@ -16,6 +19,11 @@ public class CatalogController {
 
     private final SongCatalogService catalog;
     private final UltraQueueProperties props;
+
+    public CatalogController(SongCatalogService catalog, UltraQueueProperties props) {
+        this.catalog = catalog;
+        this.props = props;
+    }
 
     /**
      * Shows the searchable & sortable song list.
@@ -35,7 +43,7 @@ public class CatalogController {
             @RequestParam(required = false) String query,
             Model model) {
 
-        int pageSize = (size != null) ? size : props.getPagination().getPageSize();
+        int pageSize = (size != null) ? size : props.pagination().pageSize();
 
         Sort.Direction direction = Sort.Direction.fromString(dir);
         PageRequest pageable = PageRequest.of(page, pageSize, Sort.by(direction, sort));

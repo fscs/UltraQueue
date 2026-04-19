@@ -18,7 +18,14 @@ public class UserContext {
      * Returns the UUID stored in the UQUSER cookie, or throws
      * IllegalStateException if the interceptor has not run.
      */
-    public String getCurrentUserId(HttpServletRequest request) {
+    public static String getCurrentUserId(HttpServletRequest request) {
+        // 1. Try to get it from request attributes (set by UserIdInterceptor during the current request)
+        String attr = (String) request.getAttribute(COOKIE_NAME);
+        if (attr != null) {
+            return attr;
+        }
+
+        // 2. Fall back to reading the cookie (for subsequent requests)
         Cookie c = WebUtils.getCookie(request, COOKIE_NAME);
         if (c == null) {
             throw new IllegalStateException("UserId cookie missing – interceptor not configured");

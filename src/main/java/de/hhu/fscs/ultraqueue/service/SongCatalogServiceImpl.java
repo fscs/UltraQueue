@@ -3,14 +3,19 @@ package de.hhu.fscs.ultraqueue.service;
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.model.Song;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,9 +28,8 @@ import java.util.stream.Stream;
  * thread‑safe map.
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class SongCatalogServiceImpl implements SongCatalogService {
+    private static final Logger log = LoggerFactory.getLogger(SongCatalogServiceImpl.class);
 
     private final UltraQueueProperties props;
 
@@ -35,12 +39,16 @@ public class SongCatalogServiceImpl implements SongCatalogService {
     /** (title‑lowercase, artist‑lowercase) → UUID – gives O(1) lookup for the API */
     private final Map<String, UUID> titleArtistIndex = new ConcurrentHashMap<>();
 
+    public SongCatalogServiceImpl(UltraQueueProperties props) {
+        this.props = props;
+    }
+
     /** -----------------------------------------------------------------
      *  Scan the folder at application start‑up.
      *  ----------------------------------------------------------------- */
     @PostConstruct
     public void init() {
-        Path root = Paths.get(props.getSongFolder()).toAbsolutePath().normalize();
+        Path root = Paths.get(props.songFolder()).toAbsolutePath().normalize();
         log.info("Scanning UltraStar song folder: {}", root);
         if (!Files.isDirectory(root)) {
             throw new IllegalStateException("Song folder does not exist or is not a directory: " + root);
@@ -88,7 +96,9 @@ public class SongCatalogServiceImpl implements SongCatalogService {
      *  “#TITLE: My Song”.
      *  ----------------------------------------------------------------- */
     private Song parseTxtFile(Path txtFile, Path songFolder) {
-        String title = null, artist = null, language = null;
+        String title = null;
+        String artist = null;
+        String language = null;
         Integer year = null;
         Duration length = null;   // we will try to deduce it from #START/END or default to 180 s
 
@@ -114,7 +124,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
                     // If we have #START already we could calculate, but for simplicity we treat END as length.
                     String secs = line.substring(5).trim();
                     try {
-                        length = Duration.ofSeconds(Long.parseLong(secs));
+                        length = Duration.ofSeconds(Long.parseLong(secs)); // TODO use timestamps/bpm instead
                     } catch (NumberFormatException ignored) {}
                 }
                 // other tags are ignored for this catalogue

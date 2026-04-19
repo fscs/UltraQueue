@@ -1,11 +1,18 @@
 package de.hhu.fscs.ultraqueue.service;
 
+import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.dto.QueueEntryDto;
+import de.hhu.fscs.ultraqueue.exception.BusinessException;
+import de.hhu.fscs.ultraqueue.exception.NotFoundException;
+import de.hhu.fscs.ultraqueue.model.PlayedSongLog;
+import de.hhu.fscs.ultraqueue.model.QueueEntry;
+import de.hhu.fscs.ultraqueue.model.Song;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.UUID;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -21,15 +28,20 @@ public class QueueService {
     private final List<PlayedSongLog> playedLog = new ArrayList<>();
     private final Map<String, UUID> userToEntry = new ConcurrentHashMap<>(); // cookie → entry id
 
+    public QueueService(UltraQueueProperties props, SongCatalogService catalog) {
+        this.props = props;
+        this.catalog = catalog;
+    }
+
     public void addSong(String userId, UUID songId) {
         lock.lock();
         try {
             // 1. enforce “max songs per user”
-            if (userToEntry.containsKey(userId) && props.getMaxSongsPerUser() == 1) {
+            if (userToEntry.containsKey(userId) && props.maxSongsPerUser() == 1) {
                 throw new BusinessException("You already have a song in the queue");
             }
             // 2. song must exist
-            Song song = catalog.getSong(songId)
+            Song song = catalog.findById(songId)
                     .orElseThrow(() -> new NotFoundException("Song not found"));
             // 3. song must not already be queued
             if (queue.stream().anyMatch(e -> e.getSong().getId().equals(songId))) {
@@ -38,15 +50,15 @@ public class QueueService {
             // 4. 60‑minute repeat rule
             Instant now = Instant.now();
             PlayedSongLog recent = playedLog.stream()
-                    .filter(l -> l.getSongId().equals(songId))
-                    .max(Comparator.comparing(PlayedSongLog::getPlayedAt))
+                    .filter(l -> l.songId().equals(songId))
+                    .max(Comparator.comparing(PlayedSongLog::playedAt))
                     .orElse(null);
             if (recent != null) {
-                long minutes = Duration.between(recent.getPlayedAt(), now).toMinutes();
-                if (minutes < props.getMinIntervalMinutes()) {
+                long minutes = Duration.between(recent.playedAt(), now).toMinutes();
+                if (minutes < props.minIntervalMinutes()) {
                     throw new BusinessException(
                             "Song was sung %d minutes ago – wait %d more minutes".formatted(
-                                    minutes, props.getMinIntervalMinutes() - minutes));
+                                    minutes, props.minIntervalMinutes() - minutes));
                 }
             }
             // 5. all good → create entry
@@ -85,7 +97,7 @@ public class QueueService {
             }
             // reuse same validation as addSong (except the max‑per‑user check)
             // … (similar to addSong, but we replace the Song field)
-            old.setSong(catalog.getSong(newSongId)
+            old.setSong(catalog.findById(newSongId)
                     .orElseThrow(() -> new NotFoundException("Song not found")));
         } finally {
             lock.unlock();
@@ -114,7 +126,7 @@ public class QueueService {
         lock.lock();
         try {
             if (queue.isEmpty()) return "";
-            return queue.get(0).getSong().getTitle();
+            return queue.getFirst().getSong().getTitle();
         } finally {
             lock.unlock();
         }
@@ -130,32 +142,18 @@ public class QueueService {
                 .orElseThrow(() -> new NotFoundException("Queue entry not found"));
     }
 
-    public List<QueueEntryDto> getQueueWithEstimates() {
+    public List<QueueEntryDto> getQueueWithEstimates(String currentUserId) {
         lock.lock();
         try {
             List<QueueEntryDto> result = new ArrayList<>();
             Instant now = Instant.now();
             long cumulatedSec = 0;
             for (QueueEntry e : queue) {
-                cumulatedSec += e.getSong().getLengthSec();
+                cumulatedSec += e.getSong().getLengthSeconds();
                 Instant estimate = now.plusSeconds(cumulatedSec);
-                result.add(new QueueEntryDto(e, estimate));
+                result.add(QueueEntryDto.of(e, estimate, currentUserId));
             }
             return result;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    // inside QueueService (add near other public methods)
-
-    public String getNextSongTitle() {
-        lock.lock();
-        try {
-            if (queue.isEmpty()) {
-                return "";
-            }
-            return queue.get(0).getSong().getTitle();  // plain text, as required
         } finally {
             lock.unlock();
         }

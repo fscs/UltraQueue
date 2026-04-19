@@ -22,7 +22,7 @@
   <tr th:each="song : ${songs}">
     <td th:text="${song.title}"></td>
     <td th:text="${song.artist}"></td>
-    <td th:text="${#numbers.formatInteger(song.lengthSec / 60)} + ':' + #strings.format('%02d', song.lengthSec % 60)"></td>
+    <td th:text="${#numbers.formatInteger(song.lengthSeconds / 60) + ':' + #strings.format('%02d', song.lengthSeconds % 60)}"></td>
     <td>
       <form th:action="@{/queue/add}" method="post">
         <input type="hidden" name="songId" th:value="${song.id}"/>

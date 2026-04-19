@@ -14,17 +14,19 @@ import java.util.List;
 import java.util.UUID;
 
 @Controller
-@RequiredArgsConstructor
 @RequestMapping("/queue")
 public class QueueController {
 
     private final QueueService queueService;
-    private final UserContext userContext;
+
+    public QueueController(QueueService queueService) {
+        this.queueService = queueService;
+    }
 
     /** Show the current queue with estimated start times. */
     @GetMapping
     public String viewQueue(Model model, HttpServletRequest request) {
-        String userId = userContext.getCurrentUserId(request);
+        String userId = UserContext.getCurrentUserId(request);
         List<QueueEntryDto> entries = queueService.getQueueWithEstimates(userId);
         model.addAttribute("queue", entries);
         return "queue"; // src/main/resources/templates/queue.html
@@ -35,7 +37,7 @@ public class QueueController {
     public String addSong(@RequestParam @NotBlank String songId,
                           HttpServletRequest request,
                           Model model) {
-        String userId = userContext.getCurrentUserId(request);
+        String userId = UserContext.getCurrentUserId(request);
         try {
             queueService.addSong(userId, UUID.fromString(songId));
             model.addAttribute("flash", "Song added to your queue.");
@@ -50,7 +52,7 @@ public class QueueController {
     public String remove(@PathVariable UUID entryId,
                          HttpServletRequest request,
                          Model model) {
-        String userId = userContext.getCurrentUserId(request);
+        String userId = UserContext.getCurrentUserId(request);
         boolean isAdmin = request.isUserInRole("ADMIN");
         queueService.removeEntry(userId, entryId, isAdmin);
         return "redirect:/queue";
@@ -62,7 +64,7 @@ public class QueueController {
                           @RequestParam @NotBlank String newSongId,
                           HttpServletRequest request,
                           Model model) {
-        String userId = userContext.getCurrentUserId(request);
+        String userId = UserContext.getCurrentUserId(request);
         queueService.replaceEntry(userId, entryId, UUID.fromString(newSongId));
         return "redirect:/queue";
     }

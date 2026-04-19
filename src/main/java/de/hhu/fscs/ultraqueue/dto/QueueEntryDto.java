@@ -1,5 +1,7 @@
 package de.hhu.fscs.ultraqueue.dto;
 
+import de.hhu.fscs.ultraqueue.model.QueueEntry;
+
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
