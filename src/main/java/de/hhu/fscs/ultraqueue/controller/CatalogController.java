@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.UUID;
+
 @Controller
 @RequestMapping("/")
 public class CatalogController {
@@ -41,6 +43,7 @@ public class CatalogController {
             @RequestParam(defaultValue = "title") String sort,
             @RequestParam(defaultValue = "ASC") String dir,
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) UUID replaceEntryId,
             Model model) {
 
         int pageSize = (size != null) ? size : props.pagination().pageSize();
@@ -57,6 +60,7 @@ public class CatalogController {
         model.addAttribute("query", query);
         model.addAttribute("sort", sort);
         model.addAttribute("dir", dir);
+        model.addAttribute("replaceEntryId", replaceEntryId);
         return "catalog";       // src/main/resources/templates/catalog.html
     }
 }

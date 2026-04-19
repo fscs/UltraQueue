@@ -30,9 +30,11 @@ class QueueServiceTest {
     private Song song1;
     private Song song2;
 
+    private SongCatalogService catalog;
+
     @BeforeEach
     void setUp() {
-        SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
+        catalog = Mockito.mock(SongCatalogService.class);
         props = new UltraQueuePropertiesBuilder()
                 .onlyOneSongPerUser(true)
                 .minIntervalMinutes(0)
@@ -87,7 +89,54 @@ class QueueServiceTest {
         UUID song2Id = song2.id();
         assertThatThrownBy(() -> queueService.addSong("user1", song2Id, false))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("already have a song");
+                .hasMessageContaining("remove or replace it");
+    }
+
+    @Test
+    @DisplayName("replacing a song works and keeps position")
+    void testReplaceSongWorks() {
+        queueService.addSong("user1", song1.id(), false);
+        queueService.addSong("user2", song2.id(), false);
+
+        UUID entry2Id = queueService.getQueueWithEstimates("user2").get(1).entryId();
+        
+        Song song3 = new Song.Builder()
+                .title("Song 3")
+                .artist("Artist 3")
+                .length(Duration.ofSeconds(210))
+                .build();
+        
+        when(catalog.findById(song3.id())).thenReturn(Optional.of(song3));
+        
+        queueService.replaceEntry("user2", entry2Id, song3.id());
+
+        var queue = queueService.getQueueWithEstimates("user2");
+        assertThat(queue.get(1).title()).isEqualTo("Song 3");
+        assertThat(queue.get(1).position()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("replacing song at position 1 fails")
+    void testReplacePosition1Fails() {
+        queueService.addSong("user1", song1.id(), false);
+        UUID entry1Id = queueService.getQueueWithEstimates("user1").get(0).entryId();
+
+        assertThatThrownBy(() -> queueService.replaceEntry("user1", entry1Id, song2.id()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("position 1");
+    }
+
+    @Test
+    @DisplayName("replacing with a song already in queue fails")
+    void testReplaceDuplicateSongFails() {
+        queueService.addSong("user1", song1.id(), false);
+        queueService.addSong("user2", song2.id(), false);
+
+        UUID entry2Id = queueService.getQueueWithEstimates("user2").get(1).entryId();
+
+        assertThatThrownBy(() -> queueService.replaceEntry("user2", entry2Id, song1.id()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("already in queue");
     }
 
     @Test

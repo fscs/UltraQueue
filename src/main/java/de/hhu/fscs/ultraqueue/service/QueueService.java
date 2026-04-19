@@ -47,7 +47,7 @@ public class QueueService {
         try {
             // enforce “only one song per user”
             if (props.onlyOneSongPerUser() && userToEntry.containsKey(userId) && !isAdmin) {
-                throw new BusinessException("You already have a song in the queue. You can remove it first if you want to change it.");
+                throw new BusinessException("You already have a song in the queue. You can remove or replace it first if you want to change it.");
             }
             
             Song song = catalog.findById(songId)
@@ -103,17 +103,26 @@ public class QueueService {
         }
     }
 
-    public void replaceEntry(String userId, UUID entryId, UUID newSongId) { // TODO not working from frontend
+    public void replaceEntry(String userId, UUID entryId, UUID newSongId) {
         lock.lock();
         try {
             QueueEntry old = findEntry(entryId);
             if (!old.getUserId().equals(userId)) {
                 throw new AccessDeniedException("Can replace only your own entry");
             }
-            // reuse same validation as addSong (except the max‑per‑user check)
-            // … (similar to addSong, but we replace the Song field)
-            old.setSong(catalog.findById(newSongId)
-                    .orElseThrow(() -> new NotFoundException("Song not found")));
+            if (old.getPosition() == 1) {
+                throw new BusinessException("Cannot replace the song at position 1 – it is likely already being prepared or sung.");
+            }
+            
+            Song newSong = catalog.findById(newSongId)
+                    .orElseThrow(() -> new NotFoundException("Song not found"));
+
+            // Ensure the new song is not already in the queue (other than this entry)
+            if (queue.stream().anyMatch(e -> !e.getId().equals(entryId) && e.getSong().id().equals(newSongId))) {
+                throw new BusinessException("Song already in queue");
+            }
+
+            old.setSong(newSong);
         } finally {
             lock.unlock();
         }

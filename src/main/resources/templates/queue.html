@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head><title>UltraQueue – Current queue</title></head>
+<head>
+  <title>UltraQueue – Current queue</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
 <body>
 <h1>Current Queue</h1>
 
@@ -24,19 +27,27 @@
     <td th:text="${e.artist}"></td>
     <td th:text="${e.estimatedStart}"></td>
     <td>
-      <form th:if="${e.ownedByMe}" th:action="@{/queue/remove/{id}(id=${e.entryId})}"
-            method="post" style="display:inline;">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-        <button type="submit">Remove</button>
-      </form>
+      <div th:if="${e.ownedByMe}" style="display:inline;">
+        <form th:action="@{/queue/remove/{id}(id=${e.entryId})}"
+              method="post" style="display:inline;">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit">Remove</button>
+        </form>
+        <a th:if="${e.position > 1}" th:href="@{/(replaceEntryId=${e.entryId})}" style="text-decoration: none;">
+          <button type="button">Replace</button>
+        </a>
+      </div>
 
       <!-- Admin can delete any entry -->
       <form th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
             th:action="@{/queue/remove/{id}(id=${e.entryId})}" method="post"
             style="display:inline;">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-        <button type="submit" style="color:red;">Admin‑Delete</button>
+        <button type="submit" class="admin">Admin‑Delete</button>
       </form>
+      <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" th:href="@{/(replaceEntryId=${e.entryId})}" style="text-decoration: none;">
+        <button type="button" class="admin">Admin-Replace</button>
+      </a>
     </td>
   </tr>
   </tbody>

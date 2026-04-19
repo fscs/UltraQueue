@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,11 +46,11 @@ public class SecurityConfig {
     public SecurityFilterChain publicChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/queue/**", "/nextsong", "/songfinished", "/static/**")
+                        .requestMatchers("/", "/queue/**", "/nextsong", "/songfinished", "/static/**", "/css/**")
                         .permitAll()
                         .anyRequest().authenticated())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/nextsong", "/songfinished")) // the game does not send a CSRF token
-                .formLogin(form -> form.disable()) // we do not use form login
+                .formLogin(AbstractHttpConfigurer::disable) // we do not use form login
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
