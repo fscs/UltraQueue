@@ -11,7 +11,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
 
@@ -35,7 +34,6 @@ class CatalogControllerTest {
                 .title("Test Song")
                 .artist("Test Artist")
                 .length(Duration.ofSeconds(185))
-                .folder(Path.of("/tmp"))
                 .build();
 
         Mockito.when(catalog.findAll(any())).thenReturn(new PageImpl<>(Collections.singletonList(song)));

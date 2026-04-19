@@ -2,6 +2,7 @@ package de.hhu.fscs.ultraqueue.service;
 
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.model.Song;
+import de.hhu.fscs.ultraqueue.parser.SongTxtParser;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,12 +12,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -80,7 +79,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
             }
 
             Path txt = maybeTxt.get();
-            Song song = parseTxtFile(txt, songDir);
+            Song song = SongTxtParser.parse(txt);
             songById.put(song.getId(), song);
             String key = makeTitleArtistKey(song.getTitle(), song.getArtist());
             titleArtistIndex.put(key, song.getId());
@@ -90,66 +89,6 @@ public class SongCatalogServiceImpl implements SongCatalogService {
         }
     }
 
-    /** -----------------------------------------------------------------
-     *  Very small parser that extracts the five fields we care about.
-     *  UltraStar .txt files are UTF‑8 text files with lines like
-     *  “#TITLE: My Song”.
-     *  ----------------------------------------------------------------- */
-    private Song parseTxtFile(Path txtFile, Path songFolder) {
-        String title = null;
-        String artist = null;
-        String language = null;
-        Integer year = null;
-        Duration length = null;   // we will try to deduce it from #START/END or default to 180 s
-
-        try (BufferedReader br = Files.newBufferedReader(txtFile)) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                line = line.trim();
-                if (line.startsWith("#TITLE:")) {
-                    title = line.substring(7).trim();
-                } else if (line.startsWith("#ARTIST:")) {
-                    artist = line.substring(8).trim();
-                } else if (line.startsWith("#LANGUAGE:")) {
-                    language = line.substring(11).trim();
-                } else if (line.startsWith("#YEAR:")) {
-                    String y = line.substring(6).trim();
-                    try {
-                        year = Integer.valueOf(y);
-                    } catch (NumberFormatException ignored) {}
-                } else if (line.startsWith("#START:")) {
-                    // UltraStar uses #START and #END to describe the audio range (in seconds)
-                    // We’ll capture them later when we also see #END.
-                } else if (line.startsWith("#END:")) {
-                    // If we have #START already we could calculate, but for simplicity we treat END as length.
-                    String secs = line.substring(5).trim();
-                    try {
-                        length = Duration.ofSeconds(Long.parseLong(secs)); // TODO use timestamps/bpm instead
-                    } catch (NumberFormatException ignored) {}
-                }
-                // other tags are ignored for this catalogue
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read song definition: " + txtFile, e);
-        }
-
-        // Fallbacks – UltraStar songs are guaranteed to have title/artist, but we protect against missing data.
-        if (title == null || title.isBlank()) title = "Untitled";
-        if (artist == null || artist.isBlank()) artist = "Unknown";
-
-        // If length is still unknown, use a generic default (3 minutes).  Real UltraStar clients would read the MP3 length,
-        // but that would require a heavy library (e.g. jaudiotagger).  For the purpose of queue‑time estimation a constant is fine.
-        if (length == null) length = Duration.ofSeconds(180); // 3 min
-
-        return new Song.Builder()
-                .title(title)
-                .artist(artist)
-                .language(language)
-                .year(year)
-                .length(length)
-                .folder(songFolder)
-                .build();
-    }
 
     private static String makeTitleArtistKey(String title, String artist) {
         return (title == null ? "" : title.toLowerCase().trim()) + "::" +

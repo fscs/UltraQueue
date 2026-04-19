@@ -1,6 +1,5 @@
 package de.hhu.fscs.ultraqueue.model;
 
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
@@ -17,7 +16,7 @@ public final class Song {
     private final String language;   // optional, may be empty
     private final Integer year;      // optional, may be null
     private final Duration length;   // length of the song in seconds (rounded)
-    private final Path folder;       // absolute path to the folder that contains the .txt file and the audio
+    private final String genre;
 
     private Song(Builder builder) {
         this.id = Objects.requireNonNull(builder.id);
@@ -26,25 +25,25 @@ public final class Song {
         this.language = builder.language;
         this.year = builder.year;
         this.length = Objects.requireNonNull(builder.length);
-        this.folder = Objects.requireNonNull(builder.folder);
+        this.genre = builder.genre;
     }
 
     /** Builder pattern – makes construction from the parser tidy. */
     public static class Builder {
-        private UUID id = UUID.randomUUID();
+        private final UUID id = UUID.randomUUID();
         private String title;
         private String artist;
         private String language;
         private Integer year;
         private Duration length;
-        private Path folder;
+        private String genre;
 
         public Builder title(String title)   { this.title = title; return this; }
         public Builder artist(String artist) { this.artist = artist; return this; }
         public Builder language(String language) { this.language = language; return this; }
         public Builder year(Integer year) { this.year = year; return this; }
         public Builder length(Duration length) { this.length = length; return this; }
-        public Builder folder(Path folder) { this.folder = folder; return this; }
+        public Builder genre(String genre) { this.genre = genre; return this; }
 
         public Song build() { return new Song(this); }
     }
@@ -58,7 +57,7 @@ public final class Song {
     public String getLanguage()   { return language; }
     public Integer getYear()      { return year; }
     public Duration getLength()   { return length; }
-    public Path getFolder()       { return folder; }
+    public String getGenre()      { return genre; }
 
     // -----------------------------------------------------------------
     // Convenience methods for UI / API
