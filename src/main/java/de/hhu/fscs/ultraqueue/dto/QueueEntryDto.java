@@ -16,11 +16,11 @@ public record QueueEntryDto(
         String title,
         String artist,
         int position,
-        String estimatedStart,   // formatted "HH:mm:ss"
+        String estimatedStart,   // formatted "HH:mm"
         boolean ownedByMe) {     // true if the entry belongs to the current user
 
     public static QueueEntryDto of(QueueEntry e, Instant estimate, String currentUserId) {
-        String fmt = DateTimeFormatter.ofPattern("HH:mm:ss")
+        String fmt = DateTimeFormatter.ofPattern("HH:mm")
                 .withZone(ZoneId.systemDefault())
                 .format(estimate);
         boolean mine = e.getUserId().equals(currentUserId);

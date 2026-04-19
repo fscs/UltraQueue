@@ -169,7 +169,8 @@ public class QueueService {
         try {
             List<QueueEntryDto> result = new ArrayList<>();
             Instant now = Instant.now(clock);
-            long cumulatedSec = 0;
+            // the first song is usually currently playing, so to have estimates who are _not too far_ in the future, just assume that song is already over
+            long cumulatedSec = queue.isEmpty() ? 0 : -queue.getFirst().getSong().getLengthSeconds();
             for (QueueEntry e : queue) {
                 cumulatedSec += e.getSong().getLengthSeconds();
                 Instant estimate = now.plusSeconds(cumulatedSec);
