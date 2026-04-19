@@ -13,6 +13,10 @@ This UltraStart main application communicates with the queue as follows:
 
 The selction/dequeuing is flexible: Users are free to select a song which is not queued next (i.e. if a person is missing right now or a song is broken).
 
+## Admin Login
+
+Go to `/admin/` to login as admin. You will then be able to remove anyone's song from the queue.
+
 ## Functional requirements
 
 - Normal users (participants) do not have to log in. They are identified based on a cookie.

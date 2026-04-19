@@ -33,7 +33,7 @@
       <form th:if="${e.ownedByMe}" th:action="@{/queue/replace/{id}(id=${e.entryId})}"
             method="post" style="display:inline;">
         <select name="newSongId">
-          <!-- you may populate this with a small list of alternatives -->
+          <!-- you may populate this with a small list of alternatives TODO this does not make sense -->
         </select>
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
         <button type="submit">Replace</button>

@@ -8,6 +8,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -24,13 +25,18 @@ public class SecurityConfig {
     }
 
     @Bean
+    public PasswordEncoder passwordEncoder() {
+        return NoOpPasswordEncoder.getInstance();
+    }
+
+    @Bean
     @Order(1) // make sure admin URLs are evaluated before the generic rule
     public SecurityFilterChain adminChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/admin/**")   // admin‑only ops
+                .securityMatcher("/admin/**", "/admin")   // admin‑only ops
                 .authorizeHttpRequests(auth -> auth.anyRequest().hasRole("ADMIN"))
                 .httpBasic(Customizer.withDefaults())
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/admin/**")); // CSRF not needed for Basic Auth
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/admin/**", "/admin")); // CSRF not needed for Basic Auth
 
         return http.build();
     }
