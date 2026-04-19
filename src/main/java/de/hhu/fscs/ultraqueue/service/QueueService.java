@@ -115,14 +115,15 @@ public class QueueService {
         lock.lock();
         try {
             Instant now = Instant.now();
+            // remember song to prevent it being sung again in the near future
             playedLog.add(new PlayedSongLog(songId, now));
-            // also remove the entry from the queue if it is still there
-            queue.removeIf(e -> e.getSong().id().equals(songId));
-            // clean up user→entry map
+            // remove the entry from the user's list of songs
             userToEntry.entrySet().removeIf(e -> {
                 QueueEntry qe = findEntry(e.getValue());
                 return qe != null && qe.getSong().id().equals(songId);
             });
+            // remove the entry from the queue
+            queue.removeIf(e -> e.getSong().id().equals(songId));
         } finally {
             lock.unlock();
         }
