@@ -242,4 +242,15 @@ class QueueServiceTest {
                 .isInstanceOf(org.springframework.security.access.AccessDeniedException.class)
                 .hasMessageContaining("Cannot delete another user’s entry");
     }
+
+    @Test
+    @DisplayName("user A can add new song after admin removed their sond")
+    void testAddAfterAdminDelete() {
+        queueService.addSong("userB", song1.id(), false);
+        UUID entryId = queueService.getQueueWithEstimates("userB").getFirst().entryId();
+        queueService.removeEntry("userA", entryId, true);
+        queueService.addSong("userB", song2.id(), false);
+
+        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 2");
+    }
 }

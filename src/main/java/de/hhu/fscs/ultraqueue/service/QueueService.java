@@ -97,7 +97,7 @@ public class QueueService {
             for (int i = 0; i < queue.size(); i++) {
                 queue.get(i).setPosition(i + 1);
             }
-            userToEntry.remove(userId);
+            userToEntry.entrySet().removeIf(e -> e.getValue().equals(entryId));
         } finally {
             lock.unlock();
         }
