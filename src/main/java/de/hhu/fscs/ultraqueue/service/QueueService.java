@@ -29,7 +29,7 @@ public class QueueService {
     // In‑memory holders
     private final List<QueueEntry> queue = new ArrayList<>(); // ordered FIFO
     private final List<PlayedSongLog> playedLog = new ArrayList<>();
-    private final Map<String, UUID> userToEntry = new ConcurrentHashMap<>(); // cookie → entry id // TODO this only allows for 0 or 1 song per user
+    private final Map<String, UUID> userToEntry = new ConcurrentHashMap<>(); // cookie → entry id
 
     @Autowired
     public QueueService(UltraQueueProperties props, SongCatalogService catalog) {
@@ -45,9 +45,9 @@ public class QueueService {
     public void addSong(String userId, UUID songId, boolean isAdmin) {
         lock.lock();
         try {
-            // enforce “max songs per user”
-            if (userToEntry.containsKey(userId) && props.maxSongsPerUser() == 1 && !isAdmin) {
-                throw new BusinessException("You already have a song in the queue");
+            // enforce “only one song per user”
+            if (props.onlyOneSongPerUser() && userToEntry.containsKey(userId) && !isAdmin) {
+                throw new BusinessException("You already have a song in the queue. You can remove it first if you want to change it.");
             }
             
             Song song = catalog.findById(songId)

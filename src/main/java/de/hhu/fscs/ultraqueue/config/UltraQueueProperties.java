@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "ultraqueue")
 public record UltraQueueProperties(
         @NotBlank String songFolder,
-        @Min(0) int maxSongsPerUser,
+        boolean onlyOneSongPerUser,
         @Min(0) int minIntervalMinutes,
         @NotNull Pagination pagination,
         @NotNull Admin admin

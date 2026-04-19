@@ -34,7 +34,7 @@ class QueueServiceTest {
     void setUp() {
         SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
         props = new UltraQueuePropertiesBuilder()
-                .maxSongsPerUser(1)
+                .onlyOneSongPerUser(true)
                 .minIntervalMinutes(0)
                 .build();
         
@@ -80,7 +80,7 @@ class QueueServiceTest {
     @DisplayName("adding two songs from the same user fails")
     void testAddingTwoSongsFromSameUserFails() {
         // Ensure config is set (it is in setUp, but being explicit here for the requirement)
-        assertThat(props.maxSongsPerUser()).isEqualTo(1);
+        assertThat(props.onlyOneSongPerUser()).isTrue();
 
         queueService.addSong("user1", song1.id(), false);
 
@@ -94,7 +94,7 @@ class QueueServiceTest {
     @DisplayName("adding two songs from the same user is ok for admins")
     void testAddingTwoSongsFromSameUserAdmin() {
         // Ensure config is set (it is in setUp, but being explicit here for the requirement)
-        assertThat(props.maxSongsPerUser()).isEqualTo(1);
+        assertThat(props.onlyOneSongPerUser()).isTrue();
 
         queueService.addSong("user1", song1.id(), false);
         queueService.addSong("user1", song2.id(), true);

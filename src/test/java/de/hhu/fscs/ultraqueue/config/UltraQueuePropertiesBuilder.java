@@ -2,13 +2,13 @@ package de.hhu.fscs.ultraqueue.config;
 
 public class UltraQueuePropertiesBuilder {
     private String songFolder = "songs";
-    private int maxSongsPerUser = 1;
+    private boolean onlyOneSongPerUser = true;
     private int minIntervalMinutes = 0;
     private UltraQueueProperties.Pagination pagination = new UltraQueueProperties.Pagination(10);
     private UltraQueueProperties.Admin admin = new UltraQueueProperties.Admin("admin", "password");
 
-    public UltraQueuePropertiesBuilder maxSongsPerUser(int maxSongsPerUser) {
-        this.maxSongsPerUser = maxSongsPerUser;
+    public UltraQueuePropertiesBuilder onlyOneSongPerUser(boolean onlyOneSongPerUser) {
+        this.onlyOneSongPerUser = onlyOneSongPerUser;
         return this;
     }
 
@@ -18,6 +18,6 @@ public class UltraQueuePropertiesBuilder {
     }
 
     public UltraQueueProperties build() {
-        return new UltraQueueProperties(songFolder, maxSongsPerUser, minIntervalMinutes, pagination, admin);
+        return new UltraQueueProperties(songFolder, onlyOneSongPerUser, minIntervalMinutes, pagination, admin);
     }
 }
