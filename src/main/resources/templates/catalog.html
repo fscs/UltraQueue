@@ -44,7 +44,7 @@
       <form th:if="${replaceEntryId == null}" th:action="@{/queue/add}" method="post">
         <input type="hidden" name="songId" th:value="${song.id}"/>
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-        <button type="submit" class="btn btn-sm btn-success">Add to queue</button>
+        <button type="submit" class="btn btn-sm btn-success">Queue</button>
       </form>
       <form th:if="${replaceEntryId != null}" th:action="@{/queue/replace/{id}(id=${replaceEntryId})}" method="post">
         <input type="hidden" name="newSongId" th:value="${song.id}"/>
