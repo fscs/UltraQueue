@@ -53,39 +53,28 @@ public class SongCatalogServiceImpl implements SongCatalogService {
             throw new IllegalStateException("Song folder does not exist or is not a directory: " + root);
         }
 
-        try (Stream<Path> dirs = Files.list(root)) {
-            dirs.filter(Files::isDirectory)
-                    .forEach(this::processSongDirectory);
+        try (Stream<Path> paths = Files.walk(root)) {
+            paths.filter(p -> p.getFileName().toString().toLowerCase().endsWith(".txt"))
+                    .filter(Files::isRegularFile)
+                    .forEach(this::processSongFile);
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to list song folder", e);
+            throw new IllegalStateException("Failed to scan song folder", e);
         }
 
         log.info("Loaded {} songs into the catalogue", songById.size());
     }
 
     /** -----------------------------------------------------------------
-     *  One UltraStar song lives in its own directory.  This method reads
-     *  the *.txt* file inside that directory and creates a {@link Song}
-     *  instance.
+     *  Parses a single UltraStar .txt file and adds it to the catalogue.
      *  ----------------------------------------------------------------- */
-    private void processSongDirectory(Path songDir) {
-        try (Stream<Path> txtFiles = Files.list(songDir)
-                .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".txt"))) {
-
-            Optional<Path> maybeTxt = txtFiles.findFirst();
-            if (maybeTxt.isEmpty()) {
-                log.warn("Directory {} does not contain a .txt file – ignored", songDir);
-                return;
-            }
-
-            Path txt = maybeTxt.get();
+    private void processSongFile(Path txt) {
+        try {
             Song song = SongTxtParser.parse(txt);
             songById.put(song.id(), song);
             String key = makeTitleArtistKey(song.title(), song.artist());
             titleArtistIndex.put(key, song.id());
-
-        } catch (IOException e) {
-            log.warn("Unable to read directory {} – skipping ({}).", songDir, e.getMessage());
+        } catch (Exception e) {
+            log.warn("Unable to read song file {} – skipping ({}).", txt, e.getMessage());
         }
     }
 

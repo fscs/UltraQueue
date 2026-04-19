@@ -86,7 +86,9 @@ public class QueueService {
             for (int i = 0; i < queue.size(); i++) {
                 queue.get(i).setPosition(i + 1);
             }
-            if (!isAdmin) userToEntry.remove(userId);
+            if (!isAdmin) {
+                userToEntry.remove(userId);
+            }
         } finally {
             lock.unlock();
         }
