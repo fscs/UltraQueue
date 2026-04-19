@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,7 +54,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
             throw new IllegalStateException("Song folder does not exist or is not a directory: " + root);
         }
 
-        try (Stream<Path> paths = Files.walk(root)) {
+        try (Stream<Path> paths = Files.walk(root, FileVisitOption.FOLLOW_LINKS)) {
             paths.filter(p -> p.getFileName().toString().toLowerCase().endsWith(".txt"))
                     .filter(Files::isRegularFile)
                     .forEach(this::processSongFile);
