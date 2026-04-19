@@ -154,7 +154,6 @@ public class SongCatalogServiceImpl implements SongCatalogService {
                 case "artist" -> fieldComparator = Comparator.comparing(Song::artist, String.CASE_INSENSITIVE_ORDER);
                 case "lengthsec", "length" -> fieldComparator = Comparator.comparingLong(Song::getLengthSeconds);
                 case "year" -> fieldComparator = Comparator.comparing(s -> s.year() == null ? 0 : s.year());
-                case "genre" -> fieldComparator = Comparator.comparing(Song::genre, String.CASE_INSENSITIVE_ORDER);
                 default -> {
                     // unknown field – ignore it
                     continue;
