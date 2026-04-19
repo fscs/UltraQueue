@@ -107,8 +107,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
         String lowered = query.toLowerCase();
 
         List<Song> filtered = songById.values().stream()
-                .filter(s -> s.title().toLowerCase().contains(lowered) ||
-                        s.artist().toLowerCase().contains(lowered))
+                .filter(s -> s.toString().toLowerCase().contains(lowered))
                 .collect(Collectors.toList());
 
         if (pageable.getSort().isSorted()) {
