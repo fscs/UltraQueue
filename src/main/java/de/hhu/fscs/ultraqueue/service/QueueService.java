@@ -47,7 +47,7 @@ public class QueueService {
         try {
             // enforce “only one song per user”
             if (props.onlyOneSongPerUser() && userToEntry.containsKey(userId) && !isAdmin) {
-                throw new BusinessException("You already have a song in the queue. You can remove or replace it first if you want to change it.");
+                throw new BusinessException("You already have a song in the queue.");
             }
             
             Song song = catalog.findById(songId)

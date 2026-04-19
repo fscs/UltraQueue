@@ -145,11 +145,8 @@ public class SongCatalogServiceImpl implements SongCatalogService {
         return new PageImpl<>(content, pageable, total);
     }
 
-    // -----------------------------------------------------------------
-    // Helper – build a comparator from a Spring Sort object.
-    // -----------------------------------------------------------------
     private Comparator<Song> createComparator(Sort sort) {
-        Comparator<Song> comparator = Comparator.comparing(Song::title, String.CASE_INSENSITIVE_ORDER);
+        Comparator<Song> comparator = null;
         for (Sort.Order order : sort) {
             Comparator<Song> fieldComparator;
             switch (order.getProperty().toLowerCase()) {
@@ -157,6 +154,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
                 case "artist" -> fieldComparator = Comparator.comparing(Song::artist, String.CASE_INSENSITIVE_ORDER);
                 case "lengthsec", "length" -> fieldComparator = Comparator.comparingLong(Song::getLengthSeconds);
                 case "year" -> fieldComparator = Comparator.comparing(s -> s.year() == null ? 0 : s.year());
+                case "genre" -> fieldComparator = Comparator.comparing(Song::genre, String.CASE_INSENSITIVE_ORDER);
                 default -> {
                     // unknown field – ignore it
                     continue;
@@ -165,7 +163,14 @@ public class SongCatalogServiceImpl implements SongCatalogService {
             if (order.isDescending()) {
                 fieldComparator = fieldComparator.reversed();
             }
-            comparator = comparator.thenComparing(fieldComparator);
+            if (comparator == null) {
+                comparator = fieldComparator;
+            } else {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        if (comparator == null) {
+            comparator = Comparator.comparing(Song::title, String.CASE_INSENSITIVE_ORDER);
         }
         return comparator;
     }

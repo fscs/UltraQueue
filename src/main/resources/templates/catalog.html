@@ -52,9 +52,9 @@
 <div>
   <span th:text="'Page ' + ${page.number + 1} + ' of ' + ${page.totalPages}"></span>
   <a th:if="${page.hasPrevious()}"
-     th:href="@{|/(page=${page.number - 1},size=${page.size},sort=${sort},dir=${dir},query=${query}${replaceEntryId != null ? '&replaceEntryId=' + replaceEntryId : ''})|}">Prev</a>
+     th:href="@{/(page=${page.number - 1},size=${page.size},sort=${sort},dir=${dir},query=${query},replaceEntryId=${replaceEntryId})}">Prev</a>
   <a th:if="${page.hasNext()}"
-     th:href="@{|/(page=${page.number + 1},size=${page.size},sort=${sort},dir=${dir},query=${query}${replaceEntryId != null ? '&replaceEntryId=' + replaceEntryId : ''})|}">Next</a>
+     th:href="@{/(page=${page.number + 1},size=${page.size},sort=${sort},dir=${dir},query=${query},replaceEntryId=${replaceEntryId})}">Next</a>
 </div>
 
 </body>

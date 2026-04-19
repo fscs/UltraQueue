@@ -77,6 +77,14 @@ public record Song(
     }
 
     @Override
+    public String toString() {
+        return "%s %s %s %s %d %s".formatted(
+                title, artist, language != null ? language : "", 
+                genre != null ? genre : "", year != null ? year : 0, 
+                id.toString());
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Song song)) return false;
