@@ -1,6 +1,7 @@
 package de.hhu.fscs.ultraqueue.service;
 
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
+import de.hhu.fscs.ultraqueue.config.UltraQueuePropertiesBuilder;
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
 import de.hhu.fscs.ultraqueue.model.Song;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,13 +28,10 @@ class QueueServiceTest {
     @BeforeEach
     void setUp() {
         SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
-        props = new UltraQueueProperties(
-                "songs",
-                1, // maxSongsPerUser
-                0, // minIntervalMinutes
-                new UltraQueueProperties.Pagination(10),
-                new UltraQueueProperties.Admin("admin", "password")
-        );
+        props = new UltraQueuePropertiesBuilder()
+                .maxSongsPerUser(1)
+                .minIntervalMinutes(0)
+                .build();
         queueService = new QueueService(props, catalog);
 
         song1 = new Song.Builder()
