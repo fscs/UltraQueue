@@ -121,6 +121,26 @@ class QueueControllerTest {
     }
 
     @Test
+    @DisplayName("POST /queue/remove should have error message when user attempts to remove another user's song")
+    void removeEntryAnotherUserFails() throws Exception {
+        try (MockedStatic<UserContext> userContextMockedStatic = Mockito.mockStatic(UserContext.class)) {
+            userContextMockedStatic.when(() -> UserContext.getCurrentUserId(any()))
+                    .thenReturn("user-A");
+
+            UUID entryId = UUID.randomUUID();
+            // Mock the service to throw an exception when called by user-A to remove another user's entry
+            Mockito.doThrow(new org.springframework.security.access.AccessDeniedException("Cannot delete another user’s entry"))
+                    .when(queueService).removeEntry(eq("user-A"), eq(entryId), eq(false));
+
+            mvc.perform(post("/queue/remove/" + entryId)
+                            .with(user("user-A"))
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(flash().attribute("error", "Cannot delete another user’s entry"));
+        }
+    }
+
+    @Test
     @DisplayName("POST /queue/replace should have flash message when successful")
     void replaceEntryShowsFlashMessage() throws Exception {
         try (MockedStatic<UserContext> userContextMockedStatic = Mockito.mockStatic(UserContext.class)) {

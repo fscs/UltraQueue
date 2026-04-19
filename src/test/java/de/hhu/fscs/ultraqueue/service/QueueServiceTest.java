@@ -144,4 +144,15 @@ class QueueServiceTest {
         queueService.addSong("user2", song1Id);
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
     }
+
+    @Test
+    @DisplayName("user A cannot remove a song of user B")
+    void testUserCannotRemoveOthersSong() {
+        queueService.addSong("userB", song1.id());
+        UUID entryId = queueService.getQueueWithEstimates("userB").getFirst().entryId();
+
+        assertThatThrownBy(() -> queueService.removeEntry("userA", entryId, false))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class)
+                .hasMessageContaining("Cannot delete another user’s entry");
+    }
 }
