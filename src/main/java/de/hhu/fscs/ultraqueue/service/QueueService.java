@@ -103,15 +103,12 @@ public class QueueService {
         }
     }
 
-    public void replaceEntry(String userId, UUID entryId, UUID newSongId) {
+    public void replaceEntry(String userId, UUID entryId, UUID newSongId, boolean isAdmin) {
         lock.lock();
         try {
             QueueEntry old = findEntry(entryId);
-            if (!old.getUserId().equals(userId)) {
+            if (!old.getUserId().equals(userId) && !isAdmin) {
                 throw new AccessDeniedException("Can replace only your own entry");
-            }
-            if (old.getPosition() == 1) {
-                throw new BusinessException("Cannot replace the song at position 1 – it is likely already being prepared or sung.");
             }
             
             Song newSong = catalog.findById(newSongId)

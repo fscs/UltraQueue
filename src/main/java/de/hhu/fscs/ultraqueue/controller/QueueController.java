@@ -72,8 +72,9 @@ public class QueueController {
                           HttpServletRequest request,
                           RedirectAttributes redirectAttributes) {
         String userId = UserContext.getCurrentUserId(request);
+        boolean isAdmin = request.isUserInRole("ADMIN");
         try {
-            queueService.replaceEntry(userId, entryId, UUID.fromString(newSongId));
+            queueService.replaceEntry(userId, entryId, UUID.fromString(newSongId), isAdmin);
             redirectAttributes.addFlashAttribute("flash", "Entry replaced.");
         } catch (Exception ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
