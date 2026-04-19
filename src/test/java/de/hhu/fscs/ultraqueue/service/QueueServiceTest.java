@@ -64,8 +64,8 @@ class QueueServiceTest {
     @Test
     @DisplayName("adding two different songs, getting the next songs and dequeuing them works as expected")
     void testAddingAndDequeuing() {
-        queueService.addSong("user1", song1.id());
-        queueService.addSong("user2", song2.id());
+        queueService.addSong("user1", song1.id(), false);
+        queueService.addSong("user2", song2.id(), false);
 
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
         queueService.markFinished(song1.id());
@@ -82,21 +82,33 @@ class QueueServiceTest {
         // Ensure config is set (it is in setUp, but being explicit here for the requirement)
         assertThat(props.maxSongsPerUser()).isEqualTo(1);
 
-        queueService.addSong("user1", song1.id());
+        queueService.addSong("user1", song1.id(), false);
 
         UUID song2Id = song2.id();
-        assertThatThrownBy(() -> queueService.addSong("user1", song2Id))
+        assertThatThrownBy(() -> queueService.addSong("user1", song2Id, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("already have a song");
+    }
+
+    @Test
+    @DisplayName("adding two songs from the same user is ok for admins")
+    void testAddingTwoSongsFromSameUserAdmin() {
+        // Ensure config is set (it is in setUp, but being explicit here for the requirement)
+        assertThat(props.maxSongsPerUser()).isEqualTo(1);
+
+        queueService.addSong("user1", song1.id(), false);
+        queueService.addSong("user1", song2.id(), true);
+
+        assertThat(queueService.getQueueWithEstimates("")).hasSize(2);
     }
 
     @Test
     @DisplayName("adding a song twice from two different users fails")
     void testAddingSameSongTwiceFails() {
         UUID song1Id = song1.id();
-        queueService.addSong("user1", song1Id);
+        queueService.addSong("user1", song1Id, false);
 
-        assertThatThrownBy(() -> queueService.addSong("user2", song1Id))
+        assertThatThrownBy(() -> queueService.addSong("user2", song1Id, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("already in queue");
     }
@@ -104,12 +116,38 @@ class QueueServiceTest {
     @Test
     @DisplayName("adding a song, singing it, and adding another one from the same users works")
     void testAddingSongAfterFinishingWorks() {
-        queueService.addSong("user1", song1.id());
+        queueService.addSong("user1", song1.id(), false);
         queueService.markFinished(song1.id());
 
-        queueService.addSong("user1", song2.id());
+        queueService.addSong("user1", song2.id(), false);
 
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 2");
+    }
+
+    @Test
+    @DisplayName("song may repeat for admins")
+    void testSongRepetitionIntervalAdmin() {
+        // Given a 5 minute interval
+        props = new UltraQueuePropertiesBuilder()
+                .minIntervalMinutes(5)
+                .build();
+        // re-setup queueService with new props
+        SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
+        UUID song1Id = song1.id();
+        when(catalog.findById(song1Id)).thenReturn(Optional.of(song1));
+        queueService = new QueueService(props, catalog, clock);
+
+        // When song 1 is added and finished at baseTime
+        queueService.addSong("user1", song1Id, false);
+        queueService.markFinished(song1Id);
+
+        // Then adding it again 4 minutes later fails
+        Instant fourMinutesLater = baseTime.plus(Duration.ofMinutes(4));
+        when(clock.instant()).thenReturn(fourMinutesLater);
+
+        queueService.addSong("user2", song1Id, true);
+
+        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
     }
 
     @Test
@@ -126,14 +164,14 @@ class QueueServiceTest {
         queueService = new QueueService(props, catalog, clock);
 
         // When song 1 is added and finished at baseTime
-        queueService.addSong("user1", song1Id);
+        queueService.addSong("user1", song1Id, false);
         queueService.markFinished(song1Id);
 
         // Then adding it again 4 minutes later fails
         Instant fourMinutesLater = baseTime.plus(Duration.ofMinutes(4));
         when(clock.instant()).thenReturn(fourMinutesLater);
 
-        assertThatThrownBy(() -> queueService.addSong("user2", song1Id))
+        assertThatThrownBy(() -> queueService.addSong("user2", song1Id, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("wait");
 
@@ -141,14 +179,14 @@ class QueueServiceTest {
         Instant fiveMinutesLater = baseTime.plus(Duration.ofMinutes(5));
         when(clock.instant()).thenReturn(fiveMinutesLater);
 
-        queueService.addSong("user2", song1Id);
+        queueService.addSong("user2", song1Id, false);
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
     }
 
     @Test
     @DisplayName("user A cannot remove a song of user B")
     void testUserCannotRemoveOthersSong() {
-        queueService.addSong("userB", song1.id());
+        queueService.addSong("userB", song1.id(), false);
         UUID entryId = queueService.getQueueWithEstimates("userB").getFirst().entryId();
 
         assertThatThrownBy(() -> queueService.removeEntry("userA", entryId, false))

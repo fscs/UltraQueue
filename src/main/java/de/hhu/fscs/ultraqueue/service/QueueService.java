@@ -42,11 +42,11 @@ public class QueueService {
         this.clock = clock;
     }
 
-    public void addSong(String userId, UUID songId) {
+    public void addSong(String userId, UUID songId, boolean isAdmin) {
         lock.lock();
         try {
             // enforce “max songs per user”
-            if (userToEntry.containsKey(userId) && props.maxSongsPerUser() == 1) {
+            if (userToEntry.containsKey(userId) && props.maxSongsPerUser() == 1 && !isAdmin) {
                 throw new BusinessException("You already have a song in the queue");
             }
             
@@ -58,7 +58,9 @@ public class QueueService {
             }
             
             Instant now = Instant.now(clock);
-            assureSongNotRecentlyPlayed(songId, now);
+            if(!isAdmin) {
+                assureSongNotRecentlyPlayed(songId, now);
+            }
 
             QueueEntry entry = new QueueEntry(UUID.randomUUID(), song, userId, queue.size() + 1);
             queue.add(entry);

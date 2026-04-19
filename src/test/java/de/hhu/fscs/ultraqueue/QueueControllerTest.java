@@ -66,7 +66,8 @@ class QueueControllerTest {
                     .andExpect(redirectedUrl("/queue"));
 
             Mockito.verify(queueService).addSong(eq("abc-123"),
-                    eq(UUID.fromString("d2c1e5f0-1234-4b1a-9a2b-99f150c0e8e9")));
+                    eq(UUID.fromString("d2c1e5f0-1234-4b1a-9a2b-99f150c0e8e9")),
+                    eq(false));
         }
     }
 
@@ -93,7 +94,7 @@ class QueueControllerTest {
                     .thenReturn("abc-123");
 
             Mockito.doThrow(new BusinessException("Song already in queue"))
-                    .when(queueService).addSong(eq("abc-123"), any());
+                    .when(queueService).addSong(eq("abc-123"), any(), eq(false));
 
             mvc.perform(post("/queue/add")
                             .param("songId", UUID.randomUUID().toString())

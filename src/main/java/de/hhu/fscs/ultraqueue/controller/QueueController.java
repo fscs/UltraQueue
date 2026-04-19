@@ -39,8 +39,9 @@ public class QueueController {
                           HttpServletRequest request,
                           RedirectAttributes redirectAttributes) {
         String userId = UserContext.getCurrentUserId(request);
+        boolean isAdmin = request.isUserInRole("ADMIN");
         try {
-            queueService.addSong(userId, UUID.fromString(songId));
+            queueService.addSong(userId, UUID.fromString(songId), isAdmin);
             redirectAttributes.addFlashAttribute("flash", "Song added to your queue.");
         } catch (BusinessException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
