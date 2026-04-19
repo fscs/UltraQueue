@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>UltraQueue – Song catalogue</title></head>
+<body>
+<h1>Song catalogue</h1>
+
+<form th:action="@{/}" method="get">
+  <input type="text" name="query" th:value="${query}" placeholder="Search…"/>
+  <button type="submit">Search</button>
+</form>
+
+<table>
+  <thead>
+  <tr>
+    <th><a th:href="@{/(page=0, sort='title', dir=${dir == 'ASC' ? 'DESC' : 'ASC'})}">Title</a></th>
+    <th><a th:href="@{/(page=0, sort='artist', dir=${dir == 'ASC' ? 'DESC' : 'ASC'})}">Artist</a></th>
+    <th>Length</th>
+    <th>Action</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="song : ${songs}">
+    <td th:text="${song.title}"></td>
+    <td th:text="${song.artist}"></td>
+    <td th:text="${#numbers.formatInteger(song.lengthSec / 60)} + ':' + #strings.format('%02d', song.lengthSec % 60)"></td>
+    <td>
+      <form th:action="@{/queue/add}" method="post">
+        <input type="hidden" name="songId" th:value="${song.id}"/>
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit">Add to queue</button>
+      </form>
+    </td>
+  </tr>
+  </tbody>
+</table>
+
+<div>
+  <span th:text="'Page ' + ${page.number + 1} + ' of ' + ${page.totalPages}"></span>
+  <a th:if="${page.hasPrevious()}"
+     th:href="@{|/(page=${page.number - 1},size=${page.size},sort=${sort},dir=${dir},query=${query})|}">Prev</a>
+  <a th:if="${page.hasNext()}"
+     th:href="@{|/(page=${page.number + 1},size=${page.size},sort=${sort},dir=${dir},query=${query})|}">Next</a>
+</div>
+
+</body>
+</html>
