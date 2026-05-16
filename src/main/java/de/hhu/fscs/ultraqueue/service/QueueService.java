@@ -59,7 +59,9 @@ public class QueueService {
             
             Song song = getSongByIdOrElseThrow(songId);
 
-            songMayBeQueuedOrElseThrow(songId, isAdmin);
+            if(!isAdmin) {
+                songMayBeQueuedOrElseThrow(songId);
+            }
 
             QueueEntry entry = new QueueEntry(UUID.randomUUID(), song, userId,
                     normalizedUsername, UserContext.getColorForUserId(userId), queue.size() + 1);
@@ -123,7 +125,9 @@ public class QueueService {
             
             Song newSong = getSongByIdOrElseThrow(newSongId);
 
-            songMayBeQueuedOrElseThrow(newSongId, isAdmin);
+            if(!isAdmin) {
+                songMayBeQueuedOrElseThrow(newSongId);
+            }
 
             old.setSong(newSong);
         } finally {
@@ -136,14 +140,12 @@ public class QueueService {
                 .orElseThrow(() -> new NotFoundException("Song not found"));
     }
 
-    private void songMayBeQueuedOrElseThrow(UUID newSongId, boolean isAdmin) {
+    private void songMayBeQueuedOrElseThrow(UUID newSongId) {
         if (songIsInQueue(newSongId)) {
             throw new BusinessException("Song already in queue");
         }
 
-        if(!isAdmin) {
-            songNotRecentlyPlayedOrElseThrow(newSongId, Instant.now(clock));
-        }
+        songNotRecentlyPlayedOrElseThrow(newSongId, Instant.now(clock));
     }
 
     private boolean songIsInQueue(UUID newSongId) {

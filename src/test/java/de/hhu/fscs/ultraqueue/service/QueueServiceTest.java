@@ -154,6 +154,26 @@ class QueueServiceTest {
     }
 
     @Test
+    @DisplayName("admin may queue a song that is already in the queue")
+    void testAdminMayQueueDuplicateSong() {
+        UltraQueueProperties localProps = new UltraQueuePropertiesBuilder()
+                .onlyOneSongPerUser(true)
+                .minIntervalMinutes(0)
+                .build();
+        QueueService localService = new QueueService(localProps, catalog, clock);
+
+        UUID song1Id = song1.id();
+        localService.addSong("user1", "User One", song1Id, false);
+
+        // should NOT throw – admins bypass the duplicate-song check
+        localService.addSong("user2", "admin", song1Id, true);
+
+        assertThat(localService.getQueueWithEstimates("")).hasSize(2);
+        assertThat(localService.getQueueWithEstimates("").stream()
+                .filter(e -> e.title().equals(song1.title())).count()).isEqualTo(2);
+    }
+
+    @Test
     @DisplayName("adding a song twice from two different users fails")
     void testAddingSameSongTwiceFails() {
         UUID song1Id = song1.id();
