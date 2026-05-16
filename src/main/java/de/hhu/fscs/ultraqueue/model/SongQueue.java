@@ -8,10 +8,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * In-memory aggregate that owns all mutable queue state and queue mechanics.
@@ -21,7 +19,6 @@ public final class SongQueue {
 
     private final List<QueueEntry> queue = new LinkedList<>();
     private final List<PlayedSongLog> playedLog = new ArrayList<>();
-    private final Map<String, UUID> userToEntry = new ConcurrentHashMap<>();
 
     public int size() {
         return queue.size();
@@ -32,7 +29,7 @@ public final class SongQueue {
     }
 
     public boolean hasEntryForUser(String userId) {
-        return userToEntry.containsKey(userId);
+        return queue.stream().anyMatch(e -> e.getUserId().equals(userId));
     }
 
     public boolean hasSong(UUID songId) {
@@ -42,7 +39,6 @@ public final class SongQueue {
     public void enqueue(QueueEntry entry) {
         entry.setPosition(queue.size() + 1);
         queue.add(entry);
-        userToEntry.put(entry.getUserId(), entry.getId());
     }
 
     public Optional<QueueEntry> findEntry(UUID entryId) {
@@ -51,7 +47,6 @@ public final class SongQueue {
 
     public void removeEntry(UUID entryId) {
         queue.removeIf(e -> e.getId().equals(entryId));
-        userToEntry.entrySet().removeIf(e -> e.getValue().equals(entryId));
         reOrderPositions();
     }
 
@@ -61,10 +56,6 @@ public final class SongQueue {
 
     public void markFinished(UUID songId, Instant playedAt) {
         playedLog.add(new PlayedSongLog(songId, playedAt));
-
-        queue.stream()
-                .filter(e -> e.getSong().id().equals(songId))
-                .forEach(e -> userToEntry.remove(e.getUserId()));
 
         queue.removeIf(e -> e.getSong().id().equals(songId));
         reOrderPositions();
@@ -107,5 +98,3 @@ public final class SongQueue {
         }
     }
 }
-
-
