@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -47,5 +48,43 @@ class SongCatalogServiceImplScanningTest {
 
         assertThat(songList).hasSize(2);
         assertThat(songList).extracting(Song::title).containsExactlyInAnyOrder("Song 1", "Song 2");
+    }
+
+    @Test
+    void testFindLyricsByIdLazyLoadsFromTxt() throws IOException {
+        Path songDir = tempDir.resolve("Song1");
+        Files.createDirectories(songDir);
+        Files.writeString(songDir.resolve("song1.txt"), """
+                #TITLE:Song 1
+                #ARTIST:Artist 1
+                #BPM:120
+                : 0 4 0 Hel
+                : 4 4 0 lo
+                - 8
+                E
+                """);
+
+        UltraQueueProperties props = mock(UltraQueueProperties.class);
+        when(props.songFolder()).thenReturn(tempDir.toString());
+
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props);
+        service.init();
+
+        Song song = service.findAll(Pageable.ofSize(10)).getContent().getFirst();
+        var lyrics = service.findLyricsById(song.id());
+
+        assertThat(lyrics).isPresent();
+        assertThat(lyrics.orElseThrow()).contains("Hello");
+    }
+
+    @Test
+    void testFindLyricsByIdReturnsEmptyForUnknownSong() {
+        UltraQueueProperties props = mock(UltraQueueProperties.class);
+        when(props.songFolder()).thenReturn(tempDir.toString());
+
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props);
+        service.init();
+
+        assertThat(service.findLyricsById(UUID.randomUUID())).isEmpty();
     }
 }

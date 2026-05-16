@@ -119,7 +119,7 @@ class QueueServiceTest {
                 .build();
         
         when(catalog.findById(song3.id())).thenReturn(Optional.of(song3));
-        
+
         queueService.replaceEntry("user2", entry2Id, song3.id(), false);
 
         var queue = queueService.getQueueWithEstimates("user2");
@@ -353,5 +353,31 @@ class QueueServiceTest {
         assertThatThrownBy(() -> queueService.replaceEntry("user2", entryId, song1Id, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("already");
+    }
+
+    @Test
+    @DisplayName("getQueuedSongDetails returns details for an existing entry")
+    void testGetQueuedSongDetailsFound() {
+        queueService.addSong("user1", "User One", song1.id(), false);
+        queueService.addSong("user2", "User Two", song2.id(), false);
+
+        UUID entryId = queueService.getQueueWithEstimates("user2").get(1).entryId();
+
+        var details = queueService.getQueuedSongDetails(entryId);
+
+        assertThat(details).isPresent();
+        assertThat(details.orElseThrow().entryId()).isEqualTo(entryId);
+        assertThat(details.orElseThrow().songId()).isEqualTo(song2.id());
+        assertThat(details.orElseThrow().title()).isEqualTo("Song 2");
+        assertThat(details.orElseThrow().artist()).isEqualTo("Artist 2");
+        assertThat(details.orElseThrow().username()).isEqualTo("User Two");
+        assertThat(details.orElseThrow().position()).isEqualTo(2);
+        assertThat(details.orElseThrow().estimatedStart()).isNotBlank();
+    }
+
+    @Test
+    @DisplayName("getQueuedSongDetails returns empty for unknown entry")
+    void testGetQueuedSongDetailsMissing() {
+        assertThat(queueService.getQueuedSongDetails(UUID.randomUUID())).isEmpty();
     }
 }
