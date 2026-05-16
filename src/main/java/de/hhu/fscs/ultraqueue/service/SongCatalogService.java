@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -23,4 +24,7 @@ public interface SongCatalogService {
 
     /** Find a song by *exact* title + artist (used by the UltraStar API). */
     Optional<Song> findByTitleArtist(String title, String artist);
+
+    /** Load lyrics for a song by id (plain lines). */
+    Optional<List<String>> findLyricsById(UUID id);
 }

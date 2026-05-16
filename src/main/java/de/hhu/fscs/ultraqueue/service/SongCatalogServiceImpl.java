@@ -36,6 +36,9 @@ public class SongCatalogServiceImpl implements SongCatalogService {
     /** UUID → Song */
     private final Map<UUID, Song> songById = new ConcurrentHashMap<>();
 
+    /** UUID -> source txt path for lazy lyrics loading */
+    private final Map<UUID, Path> songTxtById = new ConcurrentHashMap<>();
+
     /** (title‑lowercase, artist‑lowercase) → UUID – gives O(1) lookup for the API */
     private final Map<String, UUID> titleArtistIndex = new ConcurrentHashMap<>();
 
@@ -72,6 +75,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
         try {
             Song song = SongTxtParser.parse(txt);
             songById.put(song.id(), song);
+            songTxtById.put(song.id(), txt);
             String key = makeTitleArtistKey(song.title(), song.artist());
             titleArtistIndex.put(key, song.id());
         } catch (Exception e) {
@@ -128,6 +132,20 @@ public class SongCatalogServiceImpl implements SongCatalogService {
         String key = makeTitleArtistKey(title, artist);
         UUID id = titleArtistIndex.get(key);
         return (id == null) ? Optional.empty() : findById(id);
+    }
+
+    @Override
+    public Optional<List<String>> findLyricsById(UUID id) {
+        Path txtPath = songTxtById.get(id);
+        if (txtPath == null) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(SongTxtParser.parseLyrics(txtPath));
+        } catch (RuntimeException ex) {
+            log.warn("Unable to read lyrics for song {} from {}", id, txtPath, ex);
+            return Optional.empty();
+        }
     }
 
     // -----------------------------------------------------------------

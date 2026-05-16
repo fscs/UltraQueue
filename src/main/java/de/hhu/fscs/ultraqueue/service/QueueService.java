@@ -1,6 +1,7 @@
 package de.hhu.fscs.ultraqueue.service;
 
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
+import de.hhu.fscs.ultraqueue.dto.QueuedSongDetailsDto;
 import de.hhu.fscs.ultraqueue.dto.QueueEntryDto;
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
 import de.hhu.fscs.ultraqueue.exception.NotFoundException;
@@ -16,13 +17,19 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class QueueService {
+
+    private static final DateTimeFormatter TIME_FORMAT =
+            DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
 
     private final UltraQueueProperties props;
     private final SongCatalogService catalog;
@@ -168,6 +175,38 @@ public class QueueService {
                 result.add(QueueEntryDto.of(e, estimate, currentUserId));
             }
             return result;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public Optional<QueuedSongDetailsDto> getQueuedSongDetails(UUID entryId) {
+        lock.lock();
+        try {
+            Instant now = Instant.now(clock);
+            List<QueueEntry> queue = songQueue.entriesSnapshot();
+            long cumulatedSec = queue.isEmpty() ? 0 : -queue.getFirst().getSong().getLengthSeconds();
+            for (QueueEntry entry : queue) {
+                cumulatedSec += entry.getSong().getLengthSeconds();
+                if (entry.getId().equals(entryId)) {
+                    Instant estimate = now.plusSeconds(cumulatedSec);
+                    return Optional.of(new QueuedSongDetailsDto(
+                            entry.getId(),
+                            entry.getSong().id(),
+                            entry.getSong().title(),
+                            entry.getSong().artist(),
+                            entry.getSong().language(),
+                            entry.getSong().year(),
+                            entry.getSong().genre(),
+                            entry.getSong().getLengthSeconds(),
+                            TIME_FORMAT.format(estimate),
+                            entry.getUsername(),
+                            entry.getUserColor(),
+                            entry.getPosition()
+                    ));
+                }
+            }
+            return Optional.empty();
         } finally {
             lock.unlock();
         }

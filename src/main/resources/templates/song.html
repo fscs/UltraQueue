@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UltraQueue - Song details</title>
+  <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body class="container mt-4">
+
+<div class="mb-3 d-flex gap-2">
+  <a th:href="@{/queue}" class="btn btn-outline-primary">Back to queue</a>
+  <a th:href="@{/}" class="btn btn-outline-secondary">Back to catalogue</a>
+</div>
+
+<h1 class="mb-3" th:text="${song.title}">Song title</h1>
+<p class="text-muted mb-4" th:text="${song.artist}">Song artist</p>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Song info</h2>
+        <dl class="row mb-0">
+          <dt class="col-5">Language</dt>
+          <dd class="col-7" th:text="${song.language ?: '-'}">-</dd>
+          <dt class="col-5">Year</dt>
+          <dd class="col-7" th:text="${song.year ?: '-'}">-</dd>
+          <dt class="col-5">Genre</dt>
+          <dd class="col-7" th:text="${song.genre ?: '-'}">-</dd>
+          <dt class="col-5">Estimated length</dt>
+          <dd class="col-7" th:text="${#numbers.formatInteger(song.lengthSeconds / 60, 1) + ':' + #numbers.formatInteger(song.lengthSeconds % 60, 2)}">0:00</dd>
+          <dt class="col-5">Estimated start</dt>
+          <dd class="col-7" th:text="${song.estimatedStart}">00:00</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Queued by</h2>
+        <p class="mb-1">
+          <span class="user-color-label" th:style="'--user-color: ' + ${song.userColor}" th:text="${song.username}">username</span>
+        </p>
+        <small class="text-muted" th:text="'Queue position: ' + ${song.position}">Queue position</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-5">
+  <div class="card-body">
+    <h2 class="h5 mb-3">Lyrics</h2>
+    <div th:if="${#lists.isEmpty(lyrics)}" class="text-muted">No lyrics available.</div>
+    <div th:unless="${#lists.isEmpty(lyrics)}">
+      <p th:each="line : ${lyrics}" th:text="${line}" class="mb-2">Lyric line</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+

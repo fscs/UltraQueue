@@ -104,4 +104,17 @@ class SongTxtParserTest {
 
         assertThat(song.length()).isEqualTo(Duration.ofSeconds(3 * 60));
     }
+
+    @Test
+    @DisplayName("parseLyricsLines() extracts lyric lines from note rows")
+    void parseLyricsLines_extractsLyrics() {
+        List<String> lines = List.of(SIMPLE_SONG_TXT.split("\\R"));
+
+        List<String> lyrics = SongTxtParser.parseLyricsLines(lines);
+
+        assertThat(lyrics).hasSize(4);
+        assertThat(lyrics.getFirst()).isEqualTo("Wir ziehen durch die Kneipenken sind leer,");
+        assertThat(lyrics.get(2)).endsWith(" nachts gepennt.");
+        assertThat(lyrics.getLast()).endsWith("Millionär!");
+    }
 }

@@ -42,7 +42,7 @@
   <tbody>
   <tr th:each="e : ${queue}" th:classappend="${e.ownedByMe} ? ' own-queue-item' : ''">
     <td th:text="${e.position}"></td>
-    <td th:text="${e.title}"></td>
+    <td><a th:href="@{/song/{id}(id=${e.entryId})}" th:text="${e.title}"></a></td>
     <td th:text="${e.artist}"></td>
     <td>
       <span class="user-color-label" th:text="${e.username}"

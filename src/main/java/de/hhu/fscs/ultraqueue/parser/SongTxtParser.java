@@ -37,6 +37,18 @@ public final class SongTxtParser {
     }
 
     /**
+     * Reads and extracts plain lyric lines from an UltraStar *.txt* file.
+     */
+    public static List<String> parseLyrics(Path txtFile) {
+        try {
+            List<String> lines = Files.readAllLines(txtFile);
+            return parseLyricsLines(lines);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read song lyrics: " + txtFile, e);
+        }
+    }
+
+    /**
      * Parses the *already‑read* lines of a UltraStar *.txt* file.
      *
      * <p>The algorithm is exactly the same as the one you previously had
@@ -142,5 +154,54 @@ public final class SongTxtParser {
                 .year(year)
                 .length(length)
                 .build();
+    }
+
+    /**
+     * Extracts human-readable lyric lines from note rows.
+     */
+    public static List<String> parseLyricsLines(List<String> lines) {
+        List<String> result = new java.util.ArrayList<>();
+        StringBuilder currentLine = new StringBuilder();
+
+        for (String rawLine : lines) {
+            String line = rawLine.trim();
+
+            if (line.startsWith("-")) {
+                flushLyricsLine(result, currentLine);
+                continue;
+            }
+            if (line.startsWith("E")) {
+                flushLyricsLine(result, currentLine);
+                break;
+            }
+
+            if (line.startsWith(":")
+                    || line.startsWith("*")
+                    || line.startsWith("F")
+                    || line.startsWith("G")
+                    || line.startsWith("R")) {
+                String[] parts = line.split("\\s", 5);
+                if (parts.length < 5) {
+                    continue;
+                }
+
+                String token = parts[4];
+                if (token.trim().isEmpty()) {
+                    continue;
+                }
+
+                currentLine.append(token.replace("~", ""));
+            }
+        }
+
+        flushLyricsLine(result, currentLine);
+        return result;
+    }
+
+    private static void flushLyricsLine(List<String> target, StringBuilder currentLine) {
+        if (!currentLine.isEmpty()) {
+            target.add(currentLine.toString().trim());
+            currentLine.setLength(0);
+        }
     }
 }
