@@ -27,6 +27,7 @@ Go to `/admin/` to login as admin. You will then be able to remove anyone's song
 - A user can de-qeue (warning: queue position is lost) or replace their song.
 - The song selection list is sortable and searchable; pagination is used.
 - There is a single admin account (username and password hardcoded in `application.properties` -- hardcoding is ok, as we do not save any sensitive data) which can remove any songs from the queue.
+- Usernames are not unique, but users have a unique id.
 
 ## Technical requirements
 
