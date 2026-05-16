@@ -28,6 +28,9 @@ public final class SongQueue {
         return queue.isEmpty();
     }
 
+    /**
+     * O(n) lookup, ok for normal use
+     */
     public boolean hasEntryForUser(String userId) {
         return queue.stream().anyMatch(e -> e.getUserId().equals(userId));
     }
