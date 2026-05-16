@@ -18,9 +18,8 @@
 
 <div th:if="${usernameSet}" class="alert alert-info d-flex align-items-center gap-2">
   <span>Your username:</span>
-  <span class="d-inline-block rounded-circle"
-        th:style="'width: 0.9rem; height: 0.9rem; background-color: ' + ${currentUserColor}"></span>
-  <strong th:text="${currentUsername}"></strong>
+  <strong class="user-color-label" th:text="${currentUsername}"
+          th:style="'--user-color: ' + ${currentUserColor}"></strong>
 </div>
 <div th:unless="${usernameSet}" class="alert alert-warning">
   You can choose a username the next time you queue a song.
@@ -46,9 +45,8 @@
     <td th:text="${e.title}"></td>
     <td th:text="${e.artist}"></td>
     <td>
-      <span class="d-inline-block rounded-circle me-2"
-            th:style="'width: 0.9rem; height: 0.9rem; background-color: ' + ${e.userColor}"></span>
-      <span th:text="${e.username}"></span>
+      <span class="user-color-label" th:text="${e.username}"
+            th:style="'--user-color: ' + ${e.userColor}"></span>
     </td>
     <td th:text="${e.estimatedStart}"></td>
     <td>

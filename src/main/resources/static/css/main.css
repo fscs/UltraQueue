@@ -1,3 +1,9 @@
 button.admin, a.admin {
     border: 2px solid black;
 }
+
+.user-color-label {
+    border-bottom: 3px solid var(--user-color, #888);
+    padding-bottom: 1px;
+}
+

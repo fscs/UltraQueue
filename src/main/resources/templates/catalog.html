@@ -18,9 +18,8 @@
 
 <div th:if="${usernameSet}" class="alert alert-info d-flex align-items-center gap-2">
   <span>Queueing as</span>
-  <span class="d-inline-block rounded-circle"
-        th:style="'width: 0.9rem; height: 0.9rem; background-color: ' + ${currentUserColor}"></span>
-  <strong th:text="${currentUsername}"></strong>
+  <strong class="user-color-label" th:text="${currentUsername}"
+          th:style="'--user-color: ' + ${currentUserColor}"></strong>
 </div>
 <div th:unless="${usernameSet}" class="alert alert-warning">
   Choose a username the first time you queue a song.
