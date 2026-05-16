@@ -4,9 +4,9 @@ import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.dto.QueueEntryDto;
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
 import de.hhu.fscs.ultraqueue.exception.NotFoundException;
-import de.hhu.fscs.ultraqueue.model.PlayedSongLog;
 import de.hhu.fscs.ultraqueue.model.QueueEntry;
 import de.hhu.fscs.ultraqueue.model.Song;
+import de.hhu.fscs.ultraqueue.model.SongQueue;
 import de.hhu.fscs.ultraqueue.web.UserContext;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,10 +14,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Service
@@ -28,10 +28,7 @@ public class QueueService {
     private final Clock clock;
     private final ReentrantLock lock = new ReentrantLock(); // protects queue + log
 
-    // In‑memory holders
-    private final List<QueueEntry> queue = new LinkedList<>(); // ordered FIFO
-    private final List<PlayedSongLog> playedLog = new ArrayList<>();
-    private final Map<String, UUID> userToEntry = new ConcurrentHashMap<>(); // cookie → entry id
+    private final SongQueue songQueue = new SongQueue();
 
     @Autowired
     public QueueService(UltraQueueProperties props, SongCatalogService catalog) {
@@ -53,7 +50,7 @@ public class QueueService {
             }
 
             // enforce “only one song per user”
-            if (props.onlyOneSongPerUser() && userToEntry.containsKey(userId) && !isAdmin) {
+            if (props.onlyOneSongPerUser() && songQueue.hasEntryForUser(userId) && !isAdmin) {
                 throw new BusinessException("You already have a song in the queue.");
             }
             
@@ -64,9 +61,8 @@ public class QueueService {
             }
 
             QueueEntry entry = new QueueEntry(UUID.randomUUID(), song, userId,
-                    normalizedUsername, UserContext.getColorForUserId(userId), queue.size() + 1);
-            queue.add(entry);
-            userToEntry.put(userId, entry.getId());
+                    normalizedUsername, UserContext.getColorForUserId(userId), songQueue.size() + 1);
+            songQueue.enqueue(entry);
         } finally {
             lock.unlock();
         }
@@ -79,21 +75,6 @@ public class QueueService {
         return username.trim();
     }
 
-    private void songNotRecentlyPlayedOrElseThrow(UUID songId, Instant now) {
-        PlayedSongLog recent = playedLog.stream()
-                .filter(l -> l.songId().equals(songId))
-                .max(Comparator.comparing(PlayedSongLog::playedAt))
-                .orElse(null);
-        if (recent != null) {
-            long minutes = Duration.between(recent.playedAt(), now).toMinutes();
-            if (minutes < props.minIntervalMinutes()) {
-                throw new BusinessException(
-                        "Song was sung %d minutes ago – wait %d more minutes".formatted(
-                                minutes, props.minIntervalMinutes() - minutes));
-            }
-        }
-    }
-
     public void removeEntry(String userId, UUID entryId, boolean isAdmin) {
         lock.lock();
         try {
@@ -101,17 +82,9 @@ public class QueueService {
             if (!isAdmin && !entry.getUserId().equals(userId)) {
                 throw new AccessDeniedException("Cannot delete another user’s entry");
             }
-            queue.remove(entry);
-            reOrderPositions();
-            userToEntry.entrySet().removeIf(e -> e.getValue().equals(entryId));
+            songQueue.removeEntry(entryId);
         } finally {
             lock.unlock();
-        }
-    }
-
-    private void reOrderPositions() {
-        for (int i = 0; i < queue.size(); i++) {
-            queue.get(i).setPosition(i + 1);
         }
     }
 
@@ -129,7 +102,7 @@ public class QueueService {
                 songMayBeQueuedOrElseThrow(newSongId);
             }
 
-            old.setSong(newSong);
+            songQueue.replaceSong(entryId, newSong);
         } finally {
             lock.unlock();
         }
@@ -145,11 +118,11 @@ public class QueueService {
             throw new BusinessException("Song already in queue");
         }
 
-        songNotRecentlyPlayedOrElseThrow(newSongId, Instant.now(clock));
+        songQueue.songNotRecentlyPlayedOrElseThrow(newSongId, Instant.now(clock), props.minIntervalMinutes());
     }
 
     private boolean songIsInQueue(UUID newSongId) {
-        return queue.stream().anyMatch(e -> e.getSong().id().equals(newSongId));
+        return songQueue.hasSong(newSongId);
     }
 
     /** Called by the UltraStar engine when a song finishes */
@@ -157,16 +130,7 @@ public class QueueService {
         lock.lock();
         try {
             Instant now = Instant.now(clock);
-            // remember song to prevent it being sung again in the near future
-            playedLog.add(new PlayedSongLog(songId, now));
-            // remove the entry from the user's list of songs
-            userToEntry.entrySet().removeIf(e -> {
-                QueueEntry qe = findEntry(e.getValue());
-                return qe.getSong().id().equals(songId);
-            });
-            // remove the entry from the queue
-            queue.removeIf(e -> e.getSong().id().equals(songId));
-            reOrderPositions();
+            songQueue.markFinished(songId, now);
         } finally {
             lock.unlock();
         }
@@ -175,17 +139,14 @@ public class QueueService {
     public String getNextSongTitle() {
         lock.lock();
         try {
-            if (queue.isEmpty()) return "";
-            return queue.getFirst().getSong().title();
+            return songQueue.nextSongTitle();
         } finally {
             lock.unlock();
         }
     }
 
     private QueueEntry findEntry(UUID id) {
-        return queue.stream()
-                .filter(e -> e.getId().equals(id))
-                .findFirst()
+        return songQueue.findEntry(id)
                 .orElseThrow(() -> new NotFoundException("Queue entry not found"));
     }
 
@@ -194,6 +155,7 @@ public class QueueService {
         try {
             List<QueueEntryDto> result = new ArrayList<>();
             Instant now = Instant.now(clock);
+            List<QueueEntry> queue = songQueue.entriesSnapshot();
             // the first song is usually currently playing, so to have estimates who are _not too far_ in the future, just assume that song is already over
             long cumulatedSec = queue.isEmpty() ? 0 : -queue.getFirst().getSong().getLengthSeconds();
             for (QueueEntry e : queue) {
