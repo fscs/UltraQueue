@@ -40,7 +40,7 @@
   </tr>
   </thead>
   <tbody>
-  <tr th:each="e : ${queue}">
+  <tr th:each="e : ${queue}" th:classappend="${e.ownedByMe} ? ' own-queue-item' : ''">
     <td th:text="${e.position}"></td>
     <td th:text="${e.title}"></td>
     <td th:text="${e.artist}"></td>

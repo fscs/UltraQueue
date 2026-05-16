@@ -7,3 +7,6 @@ button.admin, a.admin {
     padding-bottom: 1px;
 }
 
+.own-queue-item {
+    font-weight: bold;
+}
