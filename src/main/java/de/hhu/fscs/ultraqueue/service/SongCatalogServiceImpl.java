@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -58,7 +57,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
         }
 
         try (Stream<Path> paths = Files.walk(root, FileVisitOption.FOLLOW_LINKS)) {
-            paths.filter(p -> p.getFileName().toString().toLowerCase().endsWith(".txt"))
+            paths.filter(p -> p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".txt"))
                     .filter(Files::isRegularFile)
                     .forEach(this::processSongFile);
         } catch (IOException e) {
@@ -85,8 +84,8 @@ public class SongCatalogServiceImpl implements SongCatalogService {
 
 
     private static String makeTitleArtistKey(String title, String artist) {
-        return (title == null ? "" : title.toLowerCase().trim()) + "::" +
-                (artist == null ? "" : artist.toLowerCase().trim());
+        return (title == null ? "" : title.toLowerCase(Locale.ROOT).trim()) + "::" +
+                (artist == null ? "" : artist.toLowerCase(Locale.ROOT).trim());
     }
 
     // -----------------------------------------------------------------
@@ -108,11 +107,11 @@ public class SongCatalogServiceImpl implements SongCatalogService {
     @Override
     public Page<Song> search(String query, Pageable pageable) {
         if (query == null) query = "";
-        String lowered = query.toLowerCase();
+        String lowered = query.toLowerCase(Locale.ROOT);
 
         List<Song> filtered = songById.values().stream()
-                .filter(s -> s.toString().toLowerCase().contains(lowered))
-                .collect(Collectors.toList());
+                .filter(s -> s.toString().toLowerCase(Locale.ROOT).contains(lowered))
+                .toList();
 
         if (pageable.getSort().isSorted()) {
             filtered.sort(createComparator(pageable.getSort()));
@@ -167,7 +166,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
         Comparator<Song> comparator = null;
         for (Sort.Order order : sort) {
             Comparator<Song> fieldComparator;
-            switch (order.getProperty().toLowerCase()) {
+            switch (order.getProperty().toLowerCase(Locale.ROOT)) {
                 case "title" -> fieldComparator = Comparator.comparing(Song::title, String.CASE_INSENSITIVE_ORDER);
                 case "artist" -> fieldComparator = Comparator.comparing(Song::artist, String.CASE_INSENSITIVE_ORDER);
                 case "lengthsec", "length" -> fieldComparator = Comparator.comparingLong(Song::getLengthSeconds);
