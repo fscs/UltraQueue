@@ -26,6 +26,14 @@
   Choose a username the first time you queue a song.
 </div>
 
+<div th:unless="${usernameSet}" class="card mb-3">
+  <div class="card-body">
+    <label for="queue-username-input" class="form-label mb-1">Username for queueing</label>
+    <input id="queue-username-input" type="text" class="form-control" placeholder="Choose username" autocomplete="nickname" required>
+    <small class="text-muted">You only need to set this once if you want a queue a song. There might be restrictions on how many songs may be queued per user.</small>
+  </div>
+</div>
+
 <form th:action="@{/}" method="get" class="row g-2 mb-4">
   <div class="col-auto">
     <input type="text" name="query" th:value="${query}" class="form-control" placeholder="Search…"/>
@@ -54,7 +62,7 @@
       <form th:if="${replaceEntryId == null}" th:action="@{/queue/add}" method="post">
         <input type="hidden" name="songId" th:value="${song.id}"/>
         <input type="hidden" name="username" th:if="${usernameSet}" th:value="${currentUsername}"/>
-        <input type="text" name="username" th:unless="${usernameSet}" class="form-control form-control-sm mb-2" placeholder="Choose username" required/>
+        <input type="hidden" name="username" th:unless="${usernameSet}" class="queue-username-hidden"/>
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
         <button type="submit" class="btn btn-sm btn-success">Queue</button>
       </form>
@@ -87,6 +95,30 @@
     </ul>
   </nav>
 </div>
+
+<script th:unless="${usernameSet}">
+  document.addEventListener('DOMContentLoaded', function() {
+    var source = document.getElementById('queue-username-input');
+    var forms = document.querySelectorAll('form[action$="/queue/add"]');
+
+    forms.forEach(function(form) {
+      form.addEventListener('submit', function(event) {
+        var value = source.value.trim();
+        if (!value) {
+          event.preventDefault();
+          source.focus();
+          source.reportValidity();
+          return;
+        }
+
+        var hidden = form.querySelector('.queue-username-hidden');
+        if (hidden) {
+          hidden.value = value;
+        }
+      });
+    });
+  });
+</script>
 
 </body>
 </html>
