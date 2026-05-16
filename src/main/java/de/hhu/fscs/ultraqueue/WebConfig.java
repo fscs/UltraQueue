@@ -1,6 +1,5 @@
 package de.hhu.fscs.ultraqueue;
 
-import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.web.UserContext;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,16 +13,13 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.util.WebUtils;
 
+import java.util.UUID;
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-
-    private final UltraQueueProperties props;
-    private final UserContext userContext;
     private final LoggingInterceptor loggingInterceptor;
 
-    public WebConfig(UltraQueueProperties props, UserContext userContext, LoggingInterceptor loggingInterceptor) {
-        this.props = props;
-        this.userContext = userContext;
+    public WebConfig(LoggingInterceptor loggingInterceptor) {
         this.loggingInterceptor = loggingInterceptor;
     }
 
@@ -36,18 +32,20 @@ public class WebConfig implements WebMvcConfigurer {
             @Override
             public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) {
                 var cookie = WebUtils.getCookie(request, UserContext.COOKIE_NAME);
+                String rawValue;
                 if (cookie == null) {
                     // first visit – generate a UUID and set the cookie
-                    String uuid = java.util.UUID.randomUUID().toString();
-                    Cookie newCookie = new Cookie(UserContext.COOKIE_NAME, uuid);
+                    rawValue = UUID.randomUUID().toString();
+                    Cookie newCookie = new Cookie(UserContext.COOKIE_NAME, rawValue);
                     newCookie.setHttpOnly(true);
+                    newCookie.setSecure(false);
                     newCookie.setPath("/");
                     newCookie.setMaxAge(60 * 60 * 24 * 2); // 2 days
                     response.addCookie(newCookie);
-                    request.setAttribute(UserContext.COOKIE_NAME, uuid);
                 } else {
-                    request.setAttribute(UserContext.COOKIE_NAME, cookie.getValue());
+                    rawValue = cookie.getValue();
                 }
+                request.setAttribute(UserContext.COOKIE_NAME, UserContext.extractUserIdFromCookieValue(rawValue));
                 return true;
             }
         };
@@ -72,8 +70,4 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/static/**")
                 .addResourceLocations("classpath:/static/");
     }
-
-    /** -----------------------------------------------------------------
-     *  Thymeleaf view resolver is auto‑configured by Spring Boot.
-     *  ----------------------------------------------------------------- */
 }

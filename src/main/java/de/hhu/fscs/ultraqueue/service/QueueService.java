@@ -7,6 +7,7 @@ import de.hhu.fscs.ultraqueue.exception.NotFoundException;
 import de.hhu.fscs.ultraqueue.model.PlayedSongLog;
 import de.hhu.fscs.ultraqueue.model.QueueEntry;
 import de.hhu.fscs.ultraqueue.model.Song;
+import de.hhu.fscs.ultraqueue.web.UserContext;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -43,9 +44,11 @@ public class QueueService {
         this.clock = clock;
     }
 
-    public void addSong(String userId, UUID songId, boolean isAdmin) {
+    public void addSong(String userId, String username, UUID songId, boolean isAdmin) {
         lock.lock();
         try {
+            String normalizedUsername = normalizeUsername(username);
+
             // enforce “only one song per user”
             if (props.onlyOneSongPerUser() && userToEntry.containsKey(userId) && !isAdmin) {
                 throw new BusinessException("You already have a song in the queue.");
@@ -55,12 +58,20 @@ public class QueueService {
 
             songMayBeQueuedOrElseThrow(songId, isAdmin);
 
-            QueueEntry entry = new QueueEntry(UUID.randomUUID(), song, userId, queue.size() + 1);
+            QueueEntry entry = new QueueEntry(UUID.randomUUID(), song, userId,
+                    normalizedUsername, UserContext.getColorForUserId(userId), queue.size() + 1);
             queue.add(entry);
             userToEntry.put(userId, entry.getId());
         } finally {
             lock.unlock();
         }
+    }
+
+    private String normalizeUsername(String username) {
+        if (username == null || username.isBlank()) {
+            throw new BusinessException("Username is required");
+        }
+        return username.trim();
     }
 
     private void songNotRecentlyPlayedOrElseThrow(UUID songId, Instant now) {
@@ -78,7 +89,7 @@ public class QueueService {
         }
     }
 
-    public void removeEntry(String userId, UUID entryId, boolean isAdmin) { // TODO not working from frontend
+    public void removeEntry(String userId, UUID entryId, boolean isAdmin) {
         lock.lock();
         try {
             QueueEntry entry = findEntry(entryId);
@@ -94,7 +105,6 @@ public class QueueService {
     }
 
     private void reOrderPositions() {
-        // TODO move to Fachobjekt
         for (int i = 0; i < queue.size(); i++) {
             queue.get(i).setPosition(i + 1);
         }
@@ -147,7 +157,7 @@ public class QueueService {
             // remove the entry from the user's list of songs
             userToEntry.entrySet().removeIf(e -> {
                 QueueEntry qe = findEntry(e.getValue());
-                return qe != null && qe.getSong().id().equals(songId);
+                return qe.getSong().id().equals(songId);
             });
             // remove the entry from the queue
             queue.removeIf(e -> e.getSong().id().equals(songId));

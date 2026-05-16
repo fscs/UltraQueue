@@ -16,6 +16,16 @@
 
 <h1 class="mb-4">Current Queue</h1>
 
+<div th:if="${usernameSet}" class="alert alert-info d-flex align-items-center gap-2">
+  <span>Your username:</span>
+  <span class="d-inline-block rounded-circle"
+        th:style="'width: 0.9rem; height: 0.9rem; background-color: ' + ${currentUserColor}"></span>
+  <strong th:text="${currentUsername}"></strong>
+</div>
+<div th:unless="${usernameSet}" class="alert alert-warning">
+  You can choose a username the next time you queue a song.
+</div>
+
 <div th:if="${flash}" th:text="${flash}" class="alert alert-success"></div>
 <div th:if="${error}" th:text="${error}" class="alert alert-danger"></div>
 
@@ -25,6 +35,7 @@
     <th>#</th>
     <th>Title</th>
     <th>Artist</th>
+    <th>User</th>
     <th>Est. start</th>
     <th>Actions</th>
   </tr>
@@ -34,6 +45,11 @@
     <td th:text="${e.position}"></td>
     <td th:text="${e.title}"></td>
     <td th:text="${e.artist}"></td>
+    <td>
+      <span class="d-inline-block rounded-circle me-2"
+            th:style="'width: 0.9rem; height: 0.9rem; background-color: ' + ${e.userColor}"></span>
+      <span th:text="${e.username}"></span>
+    </td>
     <td th:text="${e.estimatedStart}"></td>
     <td>
       <div th:if="${e.ownedByMe}" class="d-inline-flex gap-1">

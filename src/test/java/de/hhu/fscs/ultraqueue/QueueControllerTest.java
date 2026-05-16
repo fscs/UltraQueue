@@ -1,5 +1,6 @@
 package de.hhu.fscs.ultraqueue;
 
+import de.hhu.fscs.ultraqueue.dto.QueueEntryDto;
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
 import de.hhu.fscs.ultraqueue.service.QueueService;
 import de.hhu.fscs.ultraqueue.service.SongCatalogService;
@@ -18,7 +19,6 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -42,13 +42,40 @@ class QueueControllerTest {
             userContextMockedStatic.when(() -> UserContext.getCurrentUserId(any()))
                     .thenReturn("test-user");
 
-            Mockito.when(queueService.getQueueWithEstimates(eq("test-user")))
+            Mockito.when(queueService.getQueueWithEstimates("test-user"))
                     .thenReturn(java.util.Collections.emptyList());
 
             mvc.perform(get("/queue"))
                     .andExpect(status().isOk())
                     .andExpect(view().name("queue"))
                     .andExpect(content().string(containsString("Current Queue")));
+        }
+    }
+
+    @Test
+    @DisplayName("GET /queue renders queued usernames and colors")
+    void getQueueRendersUserMetadata() throws Exception {
+        try (MockedStatic<UserContext> userContextMockedStatic = Mockito.mockStatic(UserContext.class)) {
+            userContextMockedStatic.when(() -> UserContext.getCurrentUserId(any()))
+                    .thenReturn("test-user");
+
+            QueueEntryDto entry = new QueueEntryDto(
+                    UUID.randomUUID(),
+                    "Test Song",
+                    "Test Artist",
+                    1,
+                    "12:34",
+                    false,
+                    "Alice",
+                    "#123456");
+
+            Mockito.when(queueService.getQueueWithEstimates("test-user"))
+                    .thenReturn(java.util.Collections.singletonList(entry));
+
+            mvc.perform(get("/queue"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(containsString("Alice")))
+                    .andExpect(content().string(containsString("#123456")));
         }
     }
 
@@ -61,13 +88,15 @@ class QueueControllerTest {
 
             mvc.perform(post("/queue/add")
                             .param("songId", "d2c1e5f0-1234-4b1a-9a2b-99f150c0e8e9")
+                            .param("username", "Alice")
                             .with(csrf()))   // Spring Security CSRF token helper
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl("/queue"));
 
-            Mockito.verify(queueService).addSong(eq("abc-123"),
-                    eq(UUID.fromString("d2c1e5f0-1234-4b1a-9a2b-99f150c0e8e9")),
-                    eq(false));
+            Mockito.verify(queueService).addSong("abc-123",
+                    "Alice",
+                    UUID.fromString("d2c1e5f0-1234-4b1a-9a2b-99f150c0e8e9"),
+                    false);
         }
     }
 
@@ -80,6 +109,7 @@ class QueueControllerTest {
 
             mvc.perform(post("/queue/add")
                             .param("songId", UUID.randomUUID().toString())
+                            .param("username", "Alice")
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(flash().attribute("flash", "Song added to your queue."));
@@ -93,11 +123,13 @@ class QueueControllerTest {
             userContextMockedStatic.when(() -> UserContext.getCurrentUserId(any()))
                     .thenReturn("abc-123");
 
+            UUID songId = UUID.randomUUID();
             Mockito.doThrow(new BusinessException("Song already in queue"))
-                    .when(queueService).addSong(eq("abc-123"), any(), eq(false));
+                    .when(queueService).addSong("abc-123", "Alice", songId, false);
 
             mvc.perform(post("/queue/add")
-                            .param("songId", UUID.randomUUID().toString())
+                            .param("songId", songId.toString())
+                            .param("username", "Alice")
                             .with(csrf()))
                     .andExpect(status().is3xxRedirection())
                     .andExpect(flash().attribute("error", "Song already in queue"));
@@ -131,7 +163,7 @@ class QueueControllerTest {
             UUID entryId = UUID.randomUUID();
             // Mock the service to throw an exception when called by user-A to remove another user's entry
             Mockito.doThrow(new org.springframework.security.access.AccessDeniedException("Cannot delete another user’s entry"))
-                    .when(queueService).removeEntry(eq("user-A"), eq(entryId), eq(false));
+                    .when(queueService).removeEntry("user-A", entryId, false);
 
             mvc.perform(post("/queue/remove/" + entryId)
                             .with(user("user-A"))

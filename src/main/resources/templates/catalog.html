@@ -16,6 +16,16 @@
 
 <h1 class="mb-4">Song catalogue</h1>
 
+<div th:if="${usernameSet}" class="alert alert-info d-flex align-items-center gap-2">
+  <span>Queueing as</span>
+  <span class="d-inline-block rounded-circle"
+        th:style="'width: 0.9rem; height: 0.9rem; background-color: ' + ${currentUserColor}"></span>
+  <strong th:text="${currentUsername}"></strong>
+</div>
+<div th:unless="${usernameSet}" class="alert alert-warning">
+  Choose a username the first time you queue a song.
+</div>
+
 <form th:action="@{/}" method="get" class="row g-2 mb-4">
   <div class="col-auto">
     <input type="text" name="query" th:value="${query}" class="form-control" placeholder="Search…"/>
@@ -43,6 +53,8 @@
     <td>
       <form th:if="${replaceEntryId == null}" th:action="@{/queue/add}" method="post">
         <input type="hidden" name="songId" th:value="${song.id}"/>
+        <input type="hidden" name="username" th:if="${usernameSet}" th:value="${currentUsername}"/>
+        <input type="text" name="username" th:unless="${usernameSet}" class="form-control form-control-sm mb-2" placeholder="Choose username" required/>
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
         <button type="submit" class="btn btn-sm btn-success">Queue</button>
       </form>

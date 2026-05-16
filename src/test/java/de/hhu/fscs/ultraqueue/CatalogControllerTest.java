@@ -47,7 +47,9 @@ class CatalogControllerTest {
         Mockito.when(catalog.findAll(any())).thenReturn(new PageImpl<>(Collections.singletonList(song)));
 
         mvc.perform(get("/"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Choose a username")))
+                .andExpect(content().string(containsString("name=\"username\"")));
     }
 
     @Test
@@ -80,10 +82,10 @@ class CatalogControllerTest {
         mvc.perform(get("/").param("sort", "title").param("dir", "DESC"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(catalog).findAll(org.mockito.ArgumentMatchers.argThat(pageable -> 
-            pageable.getSort().getOrderFor("title") != null && 
-            pageable.getSort().getOrderFor("title").isDescending()
-        ));
+        Mockito.verify(catalog).findAll(org.mockito.ArgumentMatchers.argThat(pageable -> {
+            var order = pageable.getSort().getOrderFor("title");
+            return order != null && order.isDescending();
+        }));
     }
 
     @Test
@@ -111,10 +113,10 @@ class CatalogControllerTest {
         mvc.perform(get("/").param("query", "test").param("sort", "artist").param("dir", "DESC"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(catalog).search(eq("test"), org.mockito.ArgumentMatchers.argThat(pageable -> 
-            pageable.getSort().getOrderFor("artist") != null && 
-            pageable.getSort().getOrderFor("artist").isDescending()
-        ));
+        Mockito.verify(catalog).search(eq("test"), org.mockito.ArgumentMatchers.argThat(pageable -> {
+            var order = pageable.getSort().getOrderFor("artist");
+            return order != null && order.isDescending();
+        }));
     }
 }
 

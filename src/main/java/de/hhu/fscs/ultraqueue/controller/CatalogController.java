@@ -3,6 +3,7 @@ package de.hhu.fscs.ultraqueue.controller;
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.model.Song;
 import de.hhu.fscs.ultraqueue.service.SongCatalogService;
+import de.hhu.fscs.ultraqueue.web.UserContext;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 
 @Controller
@@ -44,6 +46,7 @@ public class CatalogController {
             @RequestParam(defaultValue = "ASC") String dir,
             @RequestParam(required = false) String query,
             @RequestParam(required = false) UUID replaceEntryId,
+            HttpServletRequest request,
             Model model) {
 
         int pageSize = (size != null) ? size : props.pagination().pageSize();
@@ -61,6 +64,19 @@ public class CatalogController {
         model.addAttribute("sort", sort);
         model.addAttribute("dir", dir);
         model.addAttribute("replaceEntryId", replaceEntryId);
+        addCurrentUserAttributes(model, request);
         return "catalog";       // src/main/resources/templates/catalog.html
+    }
+
+    private void addCurrentUserAttributes(Model model, HttpServletRequest request) {
+        boolean isAdmin = request.isUserInRole("ADMIN");
+        String userId = UserContext.getCurrentUserId(request);
+        String username = isAdmin
+                ? props.admin().username()
+                : UserContext.getCurrentUsername(request).orElse(null);
+        model.addAttribute("currentUserId", userId);
+        model.addAttribute("currentUsername", username);
+        model.addAttribute("currentUserColor", UserContext.getColorForUserId(userId));
+        model.addAttribute("usernameSet", username != null && !username.isBlank());
     }
 }

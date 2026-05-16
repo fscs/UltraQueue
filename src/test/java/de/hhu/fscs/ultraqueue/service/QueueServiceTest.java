@@ -66,8 +66,11 @@ class QueueServiceTest {
     @Test
     @DisplayName("adding two different songs, getting the next songs and dequeuing them works as expected")
     void testAddingAndDequeuing() {
-        queueService.addSong("user1", song1.id(), false);
-        queueService.addSong("user2", song2.id(), false);
+        queueService.addSong("user1", "User One", song1.id(), false);
+        queueService.addSong("user2", "User Two", song2.id(), false);
+
+        assertThat(queueService.getQueueWithEstimates("user1").getFirst().username()).isEqualTo("User One");
+        assertThat(queueService.getQueueWithEstimates("user1").getFirst().userColor()).matches("#[0-9a-fA-F]{6}");
 
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
         queueService.markFinished(song1.id());
@@ -84,10 +87,10 @@ class QueueServiceTest {
         // Ensure config is set (it is in setUp, but being explicit here for the requirement)
         assertThat(props.onlyOneSongPerUser()).isTrue();
 
-        queueService.addSong("user1", song1.id(), false);
+        queueService.addSong("user1", "User One", song1.id(), false);
 
         UUID song2Id = song2.id();
-        assertThatThrownBy(() -> queueService.addSong("user1", song2Id, false))
+        assertThatThrownBy(() -> queueService.addSong("user1", "User One", song2Id, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("already have");
     }
@@ -95,8 +98,8 @@ class QueueServiceTest {
     @Test
     @DisplayName("replacing a song works and keeps position")
     void testReplaceSongWorks() {
-        queueService.addSong("user1", song1.id(), false);
-        queueService.addSong("user2", song2.id(), false);
+        queueService.addSong("user1", "User One", song1.id(), false);
+        queueService.addSong("user2", "User Two", song2.id(), false);
 
         UUID entry2Id = queueService.getQueueWithEstimates("user2").get(1).entryId();
         
@@ -113,17 +116,19 @@ class QueueServiceTest {
         var queue = queueService.getQueueWithEstimates("user2");
         assertThat(queue.get(1).title()).isEqualTo("Song 3");
         assertThat(queue.get(1).position()).isEqualTo(2);
+        assertThat(queue.get(1).username()).isEqualTo("User Two");
     }
 
     @Test
     @DisplayName("replacing with a song already in queue fails")
     void testReplaceDuplicateSongFails() {
-        queueService.addSong("user1", song1.id(), false);
-        queueService.addSong("user2", song2.id(), false);
+        queueService.addSong("user1", "User One", song1.id(), false);
+        queueService.addSong("user2", "User Two", song2.id(), false);
 
         UUID entry2Id = queueService.getQueueWithEstimates("user2").get(1).entryId();
+        UUID song1Id = song1.id();
 
-        assertThatThrownBy(() -> queueService.replaceEntry("user2", entry2Id, song1.id(), false))
+        assertThatThrownBy(() -> queueService.replaceEntry("user2", entry2Id, song1Id, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("already in queue");
     }
@@ -134,8 +139,8 @@ class QueueServiceTest {
         // Ensure config is set (it is in setUp, but being explicit here for the requirement)
         assertThat(props.onlyOneSongPerUser()).isTrue();
 
-        queueService.addSong("user1", song1.id(), false);
-        queueService.addSong("user1", song2.id(), true);
+        queueService.addSong("user1", "User One", song1.id(), false);
+        queueService.addSong("user1", "Admin", song2.id(), true);
 
         assertThat(queueService.getQueueWithEstimates("")).hasSize(2);
     }
@@ -144,9 +149,9 @@ class QueueServiceTest {
     @DisplayName("adding a song twice from two different users fails")
     void testAddingSameSongTwiceFails() {
         UUID song1Id = song1.id();
-        queueService.addSong("user1", song1Id, false);
+        queueService.addSong("user1", "User One", song1Id, false);
 
-        assertThatThrownBy(() -> queueService.addSong("user2", song1Id, false))
+        assertThatThrownBy(() -> queueService.addSong("user2", "User Two", song1Id, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("already in queue");
     }
@@ -154,10 +159,10 @@ class QueueServiceTest {
     @Test
     @DisplayName("adding a song, singing it, and adding another one from the same users works")
     void testAddingSongAfterFinishingWorks() {
-        queueService.addSong("user1", song1.id(), false);
+        queueService.addSong("user1", "User One", song1.id(), false);
         queueService.markFinished(song1.id());
 
-        queueService.addSong("user1", song2.id(), false);
+        queueService.addSong("user1", "User One", song2.id(), false);
 
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 2");
     }
@@ -170,20 +175,20 @@ class QueueServiceTest {
                 .minIntervalMinutes(5)
                 .build();
         // re-setup queueService with new props
-        SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
+        SongCatalogService mockCatalog = Mockito.mock(SongCatalogService.class);
         UUID song1Id = song1.id();
-        when(catalog.findById(song1Id)).thenReturn(Optional.of(song1));
-        queueService = new QueueService(props, catalog, clock);
+        when(mockCatalog.findById(song1Id)).thenReturn(Optional.of(song1));
+        queueService = new QueueService(props, mockCatalog, clock);
 
         // When song 1 is added and finished at baseTime
-        queueService.addSong("user1", song1Id, false);
+        queueService.addSong("user1", "User One", song1Id, false);
         queueService.markFinished(song1Id);
 
         // Then adding it again 4 minutes later fails
         Instant fourMinutesLater = baseTime.plus(Duration.ofMinutes(4));
         when(clock.instant()).thenReturn(fourMinutesLater);
 
-        queueService.addSong("user2", song1Id, true);
+        queueService.addSong("user2", "Admin", song1Id, true);
 
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
     }
@@ -191,8 +196,8 @@ class QueueServiceTest {
     @Test
     @DisplayName("finished a song re-numbers songs")
     void testRenumberAfterFinish() {
-        queueService.addSong("user1", song1.id(), false);
-        queueService.addSong("user2", song2.id(), false);
+        queueService.addSong("user1", "User One", song1.id(), false);
+        queueService.addSong("user2", "User Two", song2.id(), false);
         queueService.markFinished(song1.id());
 
         assertThat(queueService.getNextSongTitle()).isEqualTo(song2.title());
@@ -207,20 +212,20 @@ class QueueServiceTest {
                 .minIntervalMinutes(5)
                 .build();
         // re-setup queueService with new props
-        SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
+        SongCatalogService mockCatalog = Mockito.mock(SongCatalogService.class);
         UUID song1Id = song1.id();
-        when(catalog.findById(song1Id)).thenReturn(Optional.of(song1));
-        queueService = new QueueService(props, catalog, clock);
+        when(mockCatalog.findById(song1Id)).thenReturn(Optional.of(song1));
+        queueService = new QueueService(props, mockCatalog, clock);
 
         // When song 1 is added and finished at baseTime
-        queueService.addSong("user1", song1Id, false);
+        queueService.addSong("user1", "User One", song1Id, false);
         queueService.markFinished(song1Id);
 
         // Then adding it again 4 minutes later fails
         Instant fourMinutesLater = baseTime.plus(Duration.ofMinutes(4));
         when(clock.instant()).thenReturn(fourMinutesLater);
 
-        assertThatThrownBy(() -> queueService.addSong("user2", song1Id, false))
+        assertThatThrownBy(() -> queueService.addSong("user2", "User Two", song1Id, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("wait");
 
@@ -228,14 +233,14 @@ class QueueServiceTest {
         Instant fiveMinutesLater = baseTime.plus(Duration.ofMinutes(5));
         when(clock.instant()).thenReturn(fiveMinutesLater);
 
-        queueService.addSong("user2", song1Id, false);
+        queueService.addSong("user2", "User Two", song1Id, false);
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
     }
 
     @Test
     @DisplayName("user A cannot remove a song of user B")
     void testUserCannotRemoveOthersSong() {
-        queueService.addSong("userB", song1.id(), false);
+        queueService.addSong("userB", "User B", song1.id(), false);
         UUID entryId = queueService.getQueueWithEstimates("userB").getFirst().entryId();
 
         assertThatThrownBy(() -> queueService.removeEntry("userA", entryId, false))
@@ -246,10 +251,10 @@ class QueueServiceTest {
     @Test
     @DisplayName("user A can add new song after admin removed their song")
     void testAddAfterAdminDelete() {
-        queueService.addSong("userB", song1.id(), false);
+        queueService.addSong("userB", "User B", song1.id(), false);
         UUID entryId = queueService.getQueueWithEstimates("userB").getFirst().entryId();
         queueService.removeEntry("userA", entryId, true);
-        queueService.addSong("userB", song2.id(), false);
+        queueService.addSong("userB", "User B", song2.id(), false);
 
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 2");
     }
@@ -262,18 +267,18 @@ class QueueServiceTest {
                 .minIntervalMinutes(5)
                 .build();
         // re-setup queueService with new props
-        SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
+        SongCatalogService mockCatalog = Mockito.mock(SongCatalogService.class);
         UUID song1Id = song1.id();
-        when(catalog.findById(song1Id)).thenReturn(Optional.of(song1));
-        queueService = new QueueService(props, catalog, clock);
+        when(mockCatalog.findById(song1Id)).thenReturn(Optional.of(song1));
+        queueService = new QueueService(props, mockCatalog, clock);
 
         // When song 1 is added and finished at baseTime
-        queueService.addSong("user1", song1Id, false);
+        queueService.addSong("user1", "User One", song1Id, false);
         queueService.markFinished(song1Id);
 
         UUID song2Id = song2.id();
-        when(catalog.findById(song2Id)).thenReturn(Optional.of(song2));
-        queueService.addSong("user2", song2Id, false);
+        when(mockCatalog.findById(song2Id)).thenReturn(Optional.of(song2));
+        queueService.addSong("user2", "User Two", song2Id, false);
 
         // Then adding song 1 again 4 minutes later fails even when using replacement
         UUID entryId = queueService.getQueueWithEstimates("x").getFirst().entryId();
@@ -299,17 +304,17 @@ class QueueServiceTest {
                 .onlyOneSongPerUser(true)
                 .build();
         // re-setup queueService with new props
-        SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
+        SongCatalogService mockCatalog = Mockito.mock(SongCatalogService.class);
         UUID song1Id = song1.id();
-        when(catalog.findById(song1Id)).thenReturn(Optional.of(song1));
-        queueService = new QueueService(props, catalog, clock);
+        when(mockCatalog.findById(song1Id)).thenReturn(Optional.of(song1));
+        queueService = new QueueService(props, mockCatalog, clock);
 
         // When song 1 is added
-        queueService.addSong("user1", song1Id, false);
+        queueService.addSong("user1", "User One", song1Id, false);
 
         UUID song2Id = song2.id();
-        when(catalog.findById(song2Id)).thenReturn(Optional.of(song2));
-        queueService.addSong("user2", song2Id, false);
+        when(mockCatalog.findById(song2Id)).thenReturn(Optional.of(song2));
+        queueService.addSong("user2", "User Two", song2Id, false);
 
         // Then adding song 1 again fails even when using replacement
         UUID entryId = queueService.getQueueWithEstimates("x").get(1).entryId();

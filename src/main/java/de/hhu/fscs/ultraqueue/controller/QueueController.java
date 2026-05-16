@@ -1,10 +1,12 @@
 package de.hhu.fscs.ultraqueue.controller;
 
+import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.web.UserContext;
 import de.hhu.fscs.ultraqueue.dto.QueueEntryDto;
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
 import de.hhu.fscs.ultraqueue.service.QueueService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,15 +20,23 @@ import java.util.UUID;
 @RequestMapping("/queue")
 public class QueueController {
 
+    private static final String ROLE_ADMIN = "ADMIN";
+    private static final String FLASH = "flash";
+    private static final String ERROR = "error";
+    private static final String REDIRECT_QUEUE = "redirect:/queue";
+
+    private final UltraQueueProperties props;
     private final QueueService queueService;
 
-    public QueueController(QueueService queueService) {
+    public QueueController(UltraQueueProperties props, QueueService queueService) {
+        this.props = props;
         this.queueService = queueService;
     }
 
     /** Show the current queue with estimated start times. */
     @GetMapping
     public String viewQueue(Model model, HttpServletRequest request) {
+        addCurrentUserAttributes(model, request);
         String userId = UserContext.getCurrentUserId(request);
         List<QueueEntryDto> entries = queueService.getQueueWithEstimates(userId);
         model.addAttribute("queue", entries);
@@ -36,17 +46,21 @@ public class QueueController {
     /** Add a song to the *current* user’s queue (POST from catalogue). */
     @PostMapping("/add")
     public String addSong(@RequestParam @NotBlank String songId,
+                          @RequestParam(required = false) String username,
                           HttpServletRequest request,
+                          HttpServletResponse response,
                           RedirectAttributes redirectAttributes) {
-        String userId = UserContext.getCurrentUserId(request);
-        boolean isAdmin = request.isUserInRole("ADMIN");
         try {
-            queueService.addSong(userId, UUID.fromString(songId), isAdmin);
-            redirectAttributes.addFlashAttribute("flash", "Song added to your queue.");
+            boolean isAdmin = request.isUserInRole(ROLE_ADMIN);
+            String userId = UserContext.getCurrentUserId(request);
+            String resolvedUsername = resolveUsername(request, username, isAdmin);
+            UserContext.setUsernameCookie(response, userId, resolvedUsername);
+            queueService.addSong(userId, resolvedUsername, UUID.fromString(songId), isAdmin);
+            redirectAttributes.addFlashAttribute(FLASH, "Song added to your queue.");
         } catch (BusinessException ex) {
-            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+            redirectAttributes.addFlashAttribute(ERROR, ex.getMessage());
         }
-        return "redirect:/queue";
+        return REDIRECT_QUEUE;
     }
 
     /** Remove a queue entry – user can delete *their own* entry, admin can delete any. */
@@ -55,14 +69,14 @@ public class QueueController {
                          HttpServletRequest request,
                          RedirectAttributes redirectAttributes) {
         String userId = UserContext.getCurrentUserId(request);
-        boolean isAdmin = request.isUserInRole("ADMIN");
+        boolean isAdmin = request.isUserInRole(ROLE_ADMIN);
         try {
             queueService.removeEntry(userId, entryId, isAdmin);
-            redirectAttributes.addFlashAttribute("flash", "Entry removed.");
+            redirectAttributes.addFlashAttribute(FLASH, "Entry removed.");
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+            redirectAttributes.addFlashAttribute(ERROR, ex.getMessage());
         }
-        return "redirect:/queue";
+        return REDIRECT_QUEUE;
     }
 
     /** Replace a user's entry with another song (keeps the position). */
@@ -72,13 +86,42 @@ public class QueueController {
                           HttpServletRequest request,
                           RedirectAttributes redirectAttributes) {
         String userId = UserContext.getCurrentUserId(request);
-        boolean isAdmin = request.isUserInRole("ADMIN");
+        boolean isAdmin = request.isUserInRole(ROLE_ADMIN);
         try {
             queueService.replaceEntry(userId, entryId, UUID.fromString(newSongId), isAdmin);
-            redirectAttributes.addFlashAttribute("flash", "Entry replaced.");
+            redirectAttributes.addFlashAttribute(FLASH, "Entry replaced.");
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+            redirectAttributes.addFlashAttribute(ERROR, ex.getMessage());
         }
-        return "redirect:/queue";
+        return REDIRECT_QUEUE;
+    }
+
+    private void addCurrentUserAttributes(Model model, HttpServletRequest request) {
+        boolean isAdmin = request.isUserInRole(ROLE_ADMIN);
+        String userId = UserContext.getCurrentUserId(request);
+        String username = isAdmin
+                ? props.admin().username()
+                : UserContext.getCurrentUsername(request).orElse(null);
+        model.addAttribute("currentUserId", userId);
+        model.addAttribute("currentUsername", username);
+        model.addAttribute("currentUserColor", UserContext.getColorForUserId(userId));
+        model.addAttribute("usernameSet", username != null && !username.isBlank());
+    }
+
+    private String resolveUsername(HttpServletRequest request, String submittedUsername, boolean isAdmin) {
+        if (isAdmin) {
+            return props.admin().username();
+        }
+
+        String currentUsername = UserContext.getCurrentUsername(request).orElse(null);
+        if (currentUsername != null && !currentUsername.isBlank()) {
+            return currentUsername;
+        }
+
+        if (submittedUsername == null || submittedUsername.isBlank()) {
+            throw new BusinessException("Please choose a username before queuing a song.");
+        }
+
+        return submittedUsername.trim();
     }
 }

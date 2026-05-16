@@ -17,7 +17,9 @@ public record QueueEntryDto(
         String artist,
         int position,
         String estimatedStart,   // formatted "HH:mm"
-        boolean ownedByMe) {     // true if the entry belongs to the current user
+        boolean ownedByMe,       // true if the entry belongs to the current user
+        String username,
+        String userColor) {
 
     public static QueueEntryDto of(QueueEntry e, Instant estimate, String currentUserId) {
         String fmt = DateTimeFormatter.ofPattern("HH:mm")
@@ -29,6 +31,8 @@ public record QueueEntryDto(
                 e.getSong().artist(),
                 e.getPosition(),
                 fmt,
-                mine);
+                mine,
+                e.getUsername(),
+                e.getUserColor());
     }
 }
