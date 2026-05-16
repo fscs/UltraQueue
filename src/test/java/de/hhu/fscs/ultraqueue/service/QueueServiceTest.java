@@ -244,7 +244,7 @@ class QueueServiceTest {
     }
 
     @Test
-    @DisplayName("user A can add new song after admin removed their sond")
+    @DisplayName("user A can add new song after admin removed their song")
     void testAddAfterAdminDelete() {
         queueService.addSong("userB", song1.id(), false);
         UUID entryId = queueService.getQueueWithEstimates("userB").getFirst().entryId();
@@ -252,5 +252,72 @@ class QueueServiceTest {
         queueService.addSong("userB", song2.id(), false);
 
         assertThat(queueService.getNextSongTitle()).isEqualTo("Song 2");
+    }
+
+    @Test
+    @DisplayName("song may not repeat within 5 minutes, even when set using the replacement feature")
+    void testSongRepetitionIntervalWithReplacement() {
+        // Given a 5 minute interval
+        props = new UltraQueuePropertiesBuilder()
+                .minIntervalMinutes(5)
+                .build();
+        // re-setup queueService with new props
+        SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
+        UUID song1Id = song1.id();
+        when(catalog.findById(song1Id)).thenReturn(Optional.of(song1));
+        queueService = new QueueService(props, catalog, clock);
+
+        // When song 1 is added and finished at baseTime
+        queueService.addSong("user1", song1Id, false);
+        queueService.markFinished(song1Id);
+
+        UUID song2Id = song2.id();
+        when(catalog.findById(song2Id)).thenReturn(Optional.of(song2));
+        queueService.addSong("user2", song2Id, false);
+
+        // Then adding song 1 again 4 minutes later fails even when using replacement
+        UUID entryId = queueService.getQueueWithEstimates("x").getFirst().entryId();
+        Instant fourMinutesLater = baseTime.plus(Duration.ofMinutes(4));
+        when(clock.instant()).thenReturn(fourMinutesLater);
+
+        assertThatThrownBy(() -> queueService.replaceEntry("user2", entryId, song1Id, false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("wait");
+
+        // But replacing it 5 minutes later works
+        Instant fiveMinutesLater = baseTime.plus(Duration.ofMinutes(5));
+        when(clock.instant()).thenReturn(fiveMinutesLater);
+
+        queueService.replaceEntry("user2", entryId, song1Id, false);
+        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
+    }
+
+    @Test
+    @DisplayName("song may not be in queue twice, even when set using the replacement feature")
+    void testSongRepetitionWithReplacement() {
+        props = new UltraQueuePropertiesBuilder()
+                .onlyOneSongPerUser(true)
+                .build();
+        // re-setup queueService with new props
+        SongCatalogService catalog = Mockito.mock(SongCatalogService.class);
+        UUID song1Id = song1.id();
+        when(catalog.findById(song1Id)).thenReturn(Optional.of(song1));
+        queueService = new QueueService(props, catalog, clock);
+
+        // When song 1 is added
+        queueService.addSong("user1", song1Id, false);
+
+        UUID song2Id = song2.id();
+        when(catalog.findById(song2Id)).thenReturn(Optional.of(song2));
+        queueService.addSong("user2", song2Id, false);
+
+        // Then adding song 1 again fails even when using replacement
+        UUID entryId = queueService.getQueueWithEstimates("x").get(1).entryId();
+        Instant fourMinutesLater = baseTime.plus(Duration.ofMinutes(4));
+        when(clock.instant()).thenReturn(fourMinutesLater);
+
+        assertThatThrownBy(() -> queueService.replaceEntry("user2", entryId, song1Id, false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("already");
     }
 }

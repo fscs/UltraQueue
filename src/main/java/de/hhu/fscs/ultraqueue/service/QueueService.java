@@ -118,9 +118,13 @@ public class QueueService {
             Song newSong = catalog.findById(newSongId)
                     .orElseThrow(() -> new NotFoundException("Song not found"));
 
-            // Ensure the new song is not already in the queue (other than this entry)
-            if (queue.stream().anyMatch(e -> !e.getId().equals(entryId) && e.getSong().id().equals(newSongId))) {
+            // Ensure the new song is not already in the queue
+            if (queue.stream().anyMatch(e -> e.getSong().id().equals(newSongId))) {
                 throw new BusinessException("Song already in queue");
+            }
+
+            if(!isAdmin) {
+                assureSongNotRecentlyPlayed(newSongId, Instant.now(clock));
             }
 
             old.setSong(newSong);

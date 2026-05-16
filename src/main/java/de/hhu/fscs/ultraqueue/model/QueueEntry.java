@@ -40,7 +40,6 @@ public final class QueueEntry {
         return position;
     }
 
-    // Only the queue service may change the ordering.
     public void setPosition(int position) {
         if (position < 1) {
             throw new IllegalArgumentException("Position must be >= 1");
