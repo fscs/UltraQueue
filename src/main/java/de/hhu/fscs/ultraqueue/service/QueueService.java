@@ -7,6 +7,7 @@ import de.hhu.fscs.ultraqueue.exception.NotFoundException;
 import de.hhu.fscs.ultraqueue.model.PlayedSongLog;
 import de.hhu.fscs.ultraqueue.model.QueueEntry;
 import de.hhu.fscs.ultraqueue.model.Song;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -50,17 +51,9 @@ public class QueueService {
                 throw new BusinessException("You already have a song in the queue.");
             }
             
-            Song song = catalog.findById(songId)
-                    .orElseThrow(() -> new NotFoundException("Song not found"));
-            
-            if (queue.stream().anyMatch(e -> e.getSong().id().equals(songId))) {
-                throw new BusinessException("Song already in queue");
-            }
-            
-            Instant now = Instant.now(clock);
-            if(!isAdmin) {
-                assureSongNotRecentlyPlayed(songId, now);
-            }
+            Song song = getSongByIdOrElseThrow(songId);
+
+            songMayBeQueuedOrElseThrow(songId, isAdmin);
 
             QueueEntry entry = new QueueEntry(UUID.randomUUID(), song, userId, queue.size() + 1);
             queue.add(entry);
@@ -70,7 +63,7 @@ public class QueueService {
         }
     }
 
-    private void assureSongNotRecentlyPlayed(UUID songId, Instant now) {
+    private void songNotRecentlyPlayedOrElseThrow(UUID songId, Instant now) {
         PlayedSongLog recent = playedLog.stream()
                 .filter(l -> l.songId().equals(songId))
                 .max(Comparator.comparing(PlayedSongLog::playedAt))
@@ -115,22 +108,33 @@ public class QueueService {
                 throw new AccessDeniedException("Can replace only your own entry");
             }
             
-            Song newSong = catalog.findById(newSongId)
-                    .orElseThrow(() -> new NotFoundException("Song not found"));
+            Song newSong = getSongByIdOrElseThrow(newSongId);
 
-            // Ensure the new song is not already in the queue
-            if (queue.stream().anyMatch(e -> e.getSong().id().equals(newSongId))) {
-                throw new BusinessException("Song already in queue");
-            }
-
-            if(!isAdmin) {
-                assureSongNotRecentlyPlayed(newSongId, Instant.now(clock));
-            }
+            songMayBeQueuedOrElseThrow(newSongId, isAdmin);
 
             old.setSong(newSong);
         } finally {
             lock.unlock();
         }
+    }
+
+    private @NonNull Song getSongByIdOrElseThrow(UUID newSongId) {
+        return catalog.findById(newSongId)
+                .orElseThrow(() -> new NotFoundException("Song not found"));
+    }
+
+    private void songMayBeQueuedOrElseThrow(UUID newSongId, boolean isAdmin) {
+        if (songIsInQueue(newSongId)) {
+            throw new BusinessException("Song already in queue");
+        }
+
+        if(!isAdmin) {
+            songNotRecentlyPlayedOrElseThrow(newSongId, Instant.now(clock));
+        }
+    }
+
+    private boolean songIsInQueue(UUID newSongId) {
+        return queue.stream().anyMatch(e -> e.getSong().id().equals(newSongId));
     }
 
     /** Called by the UltraStar engine when a song finishes */
