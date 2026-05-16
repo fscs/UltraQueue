@@ -7,6 +7,7 @@ import de.hhu.fscs.ultraqueue.exception.NotFoundException;
 import de.hhu.fscs.ultraqueue.model.QueueEntry;
 import de.hhu.fscs.ultraqueue.model.Song;
 import de.hhu.fscs.ultraqueue.model.SongQueue;
+import de.hhu.fscs.ultraqueue.persistence.QueueStateRepository;
 import de.hhu.fscs.ultraqueue.web.UserContext;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,17 +29,20 @@ public class QueueService {
     private final Clock clock;
     private final ReentrantLock lock = new ReentrantLock(); // protects queue + log
 
-    private final SongQueue songQueue = new SongQueue();
+    private final SongQueue songQueue;
 
     @Autowired
-    public QueueService(UltraQueueProperties props, SongCatalogService catalog) {
-        this(props, catalog, Clock.systemDefaultZone());
+    public QueueService(UltraQueueProperties props, SongCatalogService catalog,
+                        QueueStateRepository repository) {
+        this(props, catalog, Clock.systemDefaultZone(), repository);
     }
 
-    public QueueService(UltraQueueProperties props, SongCatalogService catalog, Clock clock) {
+    public QueueService(UltraQueueProperties props, SongCatalogService catalog, Clock clock,
+                        QueueStateRepository repository) {
         this.props = props;
         this.catalog = catalog;
         this.clock = clock;
+        this.songQueue = new SongQueue(repository);
     }
 
     public void addSong(String userId, String username, UUID songId, boolean isAdmin) {

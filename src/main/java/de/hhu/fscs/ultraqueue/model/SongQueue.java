@@ -1,6 +1,7 @@
 package de.hhu.fscs.ultraqueue.model;
 
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
+import de.hhu.fscs.ultraqueue.persistence.QueueStateRepository;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -14,11 +15,20 @@ import java.util.UUID;
 /**
  * In-memory aggregate that owns all mutable queue state and queue mechanics.
  * Business policies (permissions/rules) are applied by the service layer.
+ * State is persisted via injected repository.
  */
 public final class SongQueue {
 
-    private final List<QueueEntry> queue = new LinkedList<>();
-    private final List<PlayedSongLog> playedLog = new ArrayList<>();
+    private final QueueStateRepository repository;
+    private final List<QueueEntry> queue;
+    private final List<PlayedSongLog> playedLog;
+
+    public SongQueue(QueueStateRepository repository) {
+        this.repository = repository;
+        QueueStateRepository.QueueState state = repository.loadQueue();
+        this.queue = new LinkedList<>(state.queue());
+        this.playedLog = new ArrayList<>(state.playedLog());
+    }
 
     public int size() {
         return queue.size();
@@ -42,6 +52,7 @@ public final class SongQueue {
     public void enqueue(QueueEntry entry) {
         entry.setPosition(queue.size() + 1);
         queue.add(entry);
+        persist();
     }
 
     public Optional<QueueEntry> findEntry(UUID entryId) {
@@ -51,10 +62,12 @@ public final class SongQueue {
     public void removeEntry(UUID entryId) {
         queue.removeIf(e -> e.getId().equals(entryId));
         reOrderPositions();
+        persist();
     }
 
     public void replaceSong(UUID entryId, Song song) {
         findEntry(entryId).ifPresent(entry -> entry.setSong(song));
+        persist();
     }
 
     public void markFinished(UUID songId, Instant playedAt) {
@@ -62,6 +75,7 @@ public final class SongQueue {
 
         queue.removeIf(e -> e.getSong().id().equals(songId));
         reOrderPositions();
+        persist();
     }
 
     public Optional<PlayedSongLog> mostRecentPlayedLogForSong(UUID songId) {
@@ -100,4 +114,12 @@ public final class SongQueue {
             queue.get(i).setPosition(i + 1);
         }
     }
+
+    private void persist() {
+        repository.saveQueue(new QueueStateRepository.QueueState(
+                new ArrayList<>(queue),
+                new ArrayList<>(playedLog)));
+    }
 }
+
+

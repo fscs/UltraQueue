@@ -4,6 +4,7 @@ import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.config.UltraQueuePropertiesBuilder;
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
 import de.hhu.fscs.ultraqueue.model.Song;
+import de.hhu.fscs.ultraqueue.persistence.InMemoryQueueStateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class QueueServiceTest {
         when(clock.instant()).thenReturn(baseTime);
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
-        queueService = new QueueService(props, catalog, clock);
+        queueService = new QueueService(props, catalog, clock, new InMemoryQueueStateRepository());
 
         song1 = new Song.Builder()
                 .title("Song 1")
@@ -160,7 +161,7 @@ class QueueServiceTest {
                 .onlyOneSongPerUser(true)
                 .minIntervalMinutes(0)
                 .build();
-        QueueService localService = new QueueService(localProps, catalog, clock);
+        QueueService localService = new QueueService(localProps, catalog, clock, new InMemoryQueueStateRepository());
 
         UUID song1Id = song1.id();
         localService.addSong("user1", "User One", song1Id, false);
@@ -206,7 +207,7 @@ class QueueServiceTest {
         SongCatalogService mockCatalog = Mockito.mock(SongCatalogService.class);
         UUID song1Id = song1.id();
         when(mockCatalog.findById(song1Id)).thenReturn(Optional.of(song1));
-        queueService = new QueueService(props, mockCatalog, clock);
+        queueService = new QueueService(props, mockCatalog, clock, new InMemoryQueueStateRepository());
 
         // When song 1 is added and finished at baseTime
         queueService.addSong("user1", "User One", song1Id, false);
@@ -243,7 +244,7 @@ class QueueServiceTest {
         SongCatalogService mockCatalog = Mockito.mock(SongCatalogService.class);
         UUID song1Id = song1.id();
         when(mockCatalog.findById(song1Id)).thenReturn(Optional.of(song1));
-        queueService = new QueueService(props, mockCatalog, clock);
+        queueService = new QueueService(props, mockCatalog, clock, new InMemoryQueueStateRepository());
 
         // When song 1 is added and finished at baseTime
         queueService.addSong("user1", "User One", song1Id, false);
@@ -298,7 +299,7 @@ class QueueServiceTest {
         SongCatalogService mockCatalog = Mockito.mock(SongCatalogService.class);
         UUID song1Id = song1.id();
         when(mockCatalog.findById(song1Id)).thenReturn(Optional.of(song1));
-        queueService = new QueueService(props, mockCatalog, clock);
+        queueService = new QueueService(props, mockCatalog, clock, new InMemoryQueueStateRepository());
 
         // When song 1 is added and finished at baseTime
         queueService.addSong("user1", "User One", song1Id, false);
@@ -335,7 +336,7 @@ class QueueServiceTest {
         SongCatalogService mockCatalog = Mockito.mock(SongCatalogService.class);
         UUID song1Id = song1.id();
         when(mockCatalog.findById(song1Id)).thenReturn(Optional.of(song1));
-        queueService = new QueueService(props, mockCatalog, clock);
+        queueService = new QueueService(props, mockCatalog, clock, new InMemoryQueueStateRepository());
 
         // When song 1 is added
         queueService.addSong("user1", "User One", song1Id, false);
