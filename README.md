@@ -35,6 +35,7 @@ Go to `/admin/` to login as admin. You will then be able to remove anyone's song
 - Spring Boot
 - Thymeleaf
 - for now, in memory storage, no database (i.e. if the app crashes, the queues are lost)
+- layered architecture (small domain around data storage)
 - every request is logged, incl. user ids
 - only Ultrastar txt files are analysed to get meta data (artist, title, language, year, estimated length); the path to the song folder is set in the `application.properties`
 - libraries are used for standard tasks
