@@ -48,6 +48,9 @@ public class QueueService {
         lock.lock();
         try {
             String normalizedUsername = normalizeUsername(username);
+            if (!isAdmin && normalizedUsername.equalsIgnoreCase(props.admin().username())) {
+                throw new BusinessException("This username is reserved. Please choose a different one.");
+            }
 
             // enforce “only one song per user”
             if (props.onlyOneSongPerUser() && userToEntry.containsKey(userId) && !isAdmin) {

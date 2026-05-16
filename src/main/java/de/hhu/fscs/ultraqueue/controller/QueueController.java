@@ -54,7 +54,7 @@ public class QueueController {
             boolean isAdmin = request.isUserInRole(ROLE_ADMIN);
             String userId = UserContext.getCurrentUserId(request);
             String resolvedUsername = resolveUsername(request, username, isAdmin);
-            UserContext.setUsernameCookie(response, userId, resolvedUsername);
+            UserContext.setUsernameCookie(response, userId, resolvedUsername, props.cookie().signingSecret());
             queueService.addSong(userId, resolvedUsername, UUID.fromString(songId), isAdmin);
             redirectAttributes.addFlashAttribute(FLASH, "Song added to your queue.");
         } catch (BusinessException ex) {
@@ -115,6 +115,7 @@ public class QueueController {
 
         String currentUsername = UserContext.getCurrentUsername(request).orElse(null);
         if (currentUsername != null && !currentUsername.isBlank()) {
+            validateNonAdminUsername(currentUsername);
             return currentUsername;
         }
 
@@ -122,6 +123,14 @@ public class QueueController {
             throw new BusinessException("Please choose a username before queuing a song.");
         }
 
-        return submittedUsername.trim();
+        String normalized = submittedUsername.trim();
+        validateNonAdminUsername(normalized);
+        return normalized;
+    }
+
+    private void validateNonAdminUsername(String username) {
+        if (username.equalsIgnoreCase(props.admin().username())) {
+            throw new BusinessException("This username is reserved. Please choose a different one.");
+        }
     }
 }

@@ -137,6 +137,25 @@ class QueueControllerTest {
     }
 
     @Test
+    @DisplayName("POST /queue/add rejects reserved admin username for normal users")
+    void addSongRejectsReservedAdminUsername() throws Exception {
+        try (MockedStatic<UserContext> userContextMockedStatic = Mockito.mockStatic(UserContext.class)) {
+            userContextMockedStatic.when(() -> UserContext.getCurrentUserId(any()))
+                    .thenReturn("abc-123");
+
+            mvc.perform(post("/queue/add")
+                            .param("songId", UUID.randomUUID().toString())
+                            .param("username", "admin")
+                            .with(csrf()))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/queue"))
+                    .andExpect(flash().attribute("error", "This username is reserved. Please choose a different one."));
+
+            Mockito.verifyNoInteractions(queueService);
+        }
+    }
+
+    @Test
     @DisplayName("POST /queue/remove should have flash message when successful")
     void removeEntryShowsFlashMessage() throws Exception {
         try (MockedStatic<UserContext> userContextMockedStatic = Mockito.mockStatic(UserContext.class)) {

@@ -1,5 +1,6 @@
 package de.hhu.fscs.ultraqueue;
 
+import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.web.UserContext;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,9 +18,11 @@ import java.util.UUID;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+    private final UltraQueueProperties props;
     private final LoggingInterceptor loggingInterceptor;
 
-    public WebConfig(LoggingInterceptor loggingInterceptor) {
+    public WebConfig(UltraQueueProperties props, LoggingInterceptor loggingInterceptor) {
+        this.props = props;
         this.loggingInterceptor = loggingInterceptor;
     }
 
@@ -32,20 +35,33 @@ public class WebConfig implements WebMvcConfigurer {
             @Override
             public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) {
                 var cookie = WebUtils.getCookie(request, UserContext.COOKIE_NAME);
-                String rawValue;
+                String payload;
                 if (cookie == null) {
                     // first visit – generate a UUID and set the cookie
-                    rawValue = UUID.randomUUID().toString();
-                    Cookie newCookie = new Cookie(UserContext.COOKIE_NAME, rawValue);
+                    payload = UUID.randomUUID().toString();
+                    Cookie newCookie = new Cookie(UserContext.COOKIE_NAME,
+                            UserContext.buildSignedCookieValue(payload, props.cookie().signingSecret()));
                     newCookie.setHttpOnly(true);
                     newCookie.setSecure(false);
                     newCookie.setPath("/");
                     newCookie.setMaxAge(60 * 60 * 24 * 2); // 2 days
                     response.addCookie(newCookie);
                 } else {
-                    rawValue = cookie.getValue();
+                    String rawValue = cookie.getValue();
+                    if (UserContext.hasValidSignature(rawValue, props.cookie().signingSecret())) {
+                        payload = UserContext.extractPayloadFromSignedCookieValue(rawValue);
+                    } else {
+                        payload = UUID.randomUUID().toString();
+                        Cookie newCookie = new Cookie(UserContext.COOKIE_NAME,
+                                UserContext.buildSignedCookieValue(payload, props.cookie().signingSecret()));
+                        newCookie.setHttpOnly(true);
+                        newCookie.setSecure(false);
+                        newCookie.setPath("/");
+                        newCookie.setMaxAge(60 * 60 * 24 * 2);
+                        response.addCookie(newCookie);
+                    }
                 }
-                request.setAttribute(UserContext.COOKIE_NAME, UserContext.extractUserIdFromCookieValue(rawValue));
+                request.setAttribute(UserContext.COOKIE_NAME, UserContext.extractUserIdFromCookieValue(payload));
                 return true;
             }
         };

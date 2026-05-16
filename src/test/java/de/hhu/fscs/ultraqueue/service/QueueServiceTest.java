@@ -96,6 +96,14 @@ class QueueServiceTest {
     }
 
     @Test
+    @DisplayName("non-admin users may not queue using the reserved admin username")
+    void testReservedAdminUsernameRejected() {
+        assertThatThrownBy(() -> queueService.addSong("user1", "admin", song1.id(), false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("reserved");
+    }
+
+    @Test
     @DisplayName("replacing a song works and keeps position")
     void testReplaceSongWorks() {
         queueService.addSong("user1", "User One", song1.id(), false);

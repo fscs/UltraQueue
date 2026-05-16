@@ -13,7 +13,8 @@ public record UltraQueueProperties(
         boolean onlyOneSongPerUser,
         @Min(0) int minIntervalMinutes,
         @NotNull Pagination pagination,
-        @NotNull Admin admin
+        @NotNull Admin admin,
+        @NotNull Cookie cookie
 ) {
 
     public record Pagination(
@@ -23,5 +24,9 @@ public record UltraQueueProperties(
     public record Admin(
             @NotBlank String username,
             @NotBlank String password
+    ) {}
+
+    public record Cookie(
+            @NotBlank String signingSecret
     ) {}
 }

@@ -6,6 +6,7 @@ public class UltraQueuePropertiesBuilder {
     private int minIntervalMinutes = 0;
     private UltraQueueProperties.Pagination pagination = new UltraQueueProperties.Pagination(10);
     private UltraQueueProperties.Admin admin = new UltraQueueProperties.Admin("admin", "password");
+    private UltraQueueProperties.Cookie cookie = new UltraQueueProperties.Cookie("test-cookie-signing-secret");
 
     public UltraQueuePropertiesBuilder onlyOneSongPerUser(boolean onlyOneSongPerUser) {
         this.onlyOneSongPerUser = onlyOneSongPerUser;
@@ -18,6 +19,6 @@ public class UltraQueuePropertiesBuilder {
     }
 
     public UltraQueueProperties build() {
-        return new UltraQueueProperties(songFolder, onlyOneSongPerUser, minIntervalMinutes, pagination, admin);
+        return new UltraQueueProperties(songFolder, onlyOneSongPerUser, minIntervalMinutes, pagination, admin, cookie);
     }
 }
