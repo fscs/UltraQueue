@@ -153,4 +153,14 @@ class SongCatalogServiceImplTest {
         assertThat(results).hasSize(1);
         assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Foobar");
     }
+
+    @Test
+    @DisplayName("Complete song list can be sorted")
+    void test4() throws IOException {
+        SongCatalogServiceImpl service = serviceWithFakeSongs();
+        Pageable pagable = PageRequest.of(0, 10, Sort.by("artist"));
+        Page<Song> results = service.findAll(pagable);
+        assertThat(results).hasSize(2);
+        assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Artist 1");
+    }
 }

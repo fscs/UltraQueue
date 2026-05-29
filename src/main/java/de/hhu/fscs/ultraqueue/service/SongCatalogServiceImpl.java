@@ -93,31 +93,20 @@ public class SongCatalogServiceImpl implements SongCatalogService {
     // -----------------------------------------------------------------
     @Override
     public Page<Song> findAll(Pageable pageable) {
-        List<Song> all = new ArrayList<>(songById.values());
-
-        // Apply sorting defined in the Pageable (Spring will give us a Sort object)
-        if (pageable.getSort().isSorted()) {
-            Comparator<Song> comparator = createComparator(pageable.getSort());
-            all.sort(comparator);
-        }
-
-        return toPage(all, pageable);
+        return search("", pageable);
     }
 
     @Override
     public Page<Song> search(String query, Pageable pageable) {
-        if (query == null) query = "";
+        if (query == null) {
+            query = "";
+        }
         String lowered = query.toLowerCase(Locale.ROOT);
 
         List<Song> filtered = songById.values().stream()
-                .filter(s -> s.toString().toLowerCase(Locale.ROOT).contains(lowered))
+                .filter(s -> lowered.isEmpty() || s.toString().toLowerCase(Locale.ROOT).contains(lowered))
+                .sorted(createComparator(pageable.getSort()))
                 .toList();
-
-        if (pageable.getSort().isSorted()) {
-            filtered = filtered.stream()
-                    .sorted(createComparator(pageable.getSort()))
-                    .toList();
-        }
 
         return toPage(filtered, pageable);
     }
