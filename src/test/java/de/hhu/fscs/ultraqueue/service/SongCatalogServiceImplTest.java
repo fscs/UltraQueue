@@ -2,9 +2,13 @@ package de.hhu.fscs.ultraqueue.service;
 
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.model.Song;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class SongCatalogServiceImplScanningTest {
+class SongCatalogServiceImplTest {
 
     @TempDir
     Path tempDir;
@@ -86,5 +90,67 @@ class SongCatalogServiceImplScanningTest {
         service.init();
 
         assertThat(service.findLyricsById(UUID.randomUUID())).isEmpty();
+    }
+
+    private SongCatalogServiceImpl serviceWithFakeSongs() throws IOException {
+        Path songDir = tempDir.resolve("Song1");
+        Files.createDirectories(songDir);
+        Files.writeString(songDir.resolve("song1.txt"), """
+                #TITLE:Song 1
+                #ARTIST:Artist 1
+                #BPM:120
+                : 0 4 0 Hel
+                : 4 4 0 lo
+                - 8
+                E
+                """);
+        Files.createDirectories(songDir);
+        Files.writeString(songDir.resolve("song2.txt"), """
+                #TITLE:Blabla
+                #ARTIST:Foobar
+                #BPM:120
+                : 0 4 0 Hel
+                : 4 4 0 lo
+                - 8
+                E
+                """);
+
+        UltraQueueProperties props = mock(UltraQueueProperties.class);
+        when(props.songFolder()).thenReturn(tempDir.toString());
+
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props);
+        service.init();
+
+        return service;
+    }
+
+    @Test
+    @DisplayName("Search returns matching results")
+    void test1() throws IOException {
+        SongCatalogServiceImpl service = serviceWithFakeSongs();
+        Pageable pagable = Pageable.ofSize(10);
+        Page<Song> results = service.search("Foobar", pagable);
+        assertThat(results).hasSize(1);
+        assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Foobar");
+    }
+
+    @Test
+    @DisplayName("Search is case insensitive matching results")
+    void test2() throws IOException {
+        SongCatalogServiceImpl service = serviceWithFakeSongs();
+        Pageable pagable = Pageable.ofSize(10);
+        Page<Song> results = service.search("foobar", pagable);
+        assertThat(results).hasSize(1);
+        assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Foobar");
+    }
+
+    @Test
+    @DisplayName("Search results can be sorted")
+    void test3() throws IOException {
+        SongCatalogServiceImpl service = serviceWithFakeSongs();
+        Pageable pagable = PageRequest.of(0, 10, Sort.by("artist"));
+        Page<Song> results = service.search("foobar", pagable);
+        assertThat(results).hasSize(1);
+        assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Foobar");
     }
 }

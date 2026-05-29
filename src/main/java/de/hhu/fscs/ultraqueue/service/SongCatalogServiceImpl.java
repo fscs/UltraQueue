@@ -114,7 +114,9 @@ public class SongCatalogServiceImpl implements SongCatalogService {
                 .toList();
 
         if (pageable.getSort().isSorted()) {
-            filtered.sort(createComparator(pageable.getSort()));
+            filtered = filtered.stream()
+                    .sorted(createComparator(pageable.getSort()))
+                    .toList();
         }
 
         return toPage(filtered, pageable);
