@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -162,5 +163,21 @@ class SongCatalogServiceImplTest {
         Page<Song> results = service.findAll(pagable);
         assertThat(results).hasSize(2);
         assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Artist 1");
+    }
+
+    @Test
+    @DisplayName("Find by Title/Artist return result if present")
+    void test5() throws IOException {
+        SongCatalogServiceImpl service = serviceWithFakeSongs();
+        Optional<Song> result = service.findByTitleArtist("Song 1", "Artist 1");
+        assertThat(result).get().matches(song -> song.title().equals("Song 1"));
+    }
+
+    @Test
+    @DisplayName("Find by Title/Artist return empty if not present")
+    void test6() throws IOException {
+        SongCatalogServiceImpl service = serviceWithFakeSongs();
+        Optional<Song> result = service.findByTitleArtist("Song NOT PRESENT", "Artist 1");
+        assertThat(result).isEmpty();
     }
 }
