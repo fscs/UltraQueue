@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 class QueueServiceTest {
@@ -231,6 +232,13 @@ class QueueServiceTest {
 
         assertThat(queueService.getNextSongTitle()).isEqualTo(song2.title());
         assertThat(queueService.getQueueWithEstimates("user1").getFirst().position()).isOne();
+    }
+
+    @Test
+    @DisplayName("finishing a song not queued throws exception")
+    void test1() {
+        queueService.addSong("user1", "User One", song1.id(), false);
+        assertThrows(Exception.class, () -> queueService.markFinished(song2.id()));
     }
 
     @Test
