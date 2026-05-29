@@ -6,10 +6,12 @@ Participants at an UltraStar Karaoke party can open `/` to see a list of availab
 
 `/queue` displays the queue with the next song, with an estimate when which song is played.
 
-This UltraStart main application communicates with the queue as follows:
+The (patched) UltraStart main application communicates with the queue as follows:
 
 - When opening the song selection screen, a GET request is sent to `/nextsong`, which sends the next song _title_ as plaintext.
-- When reaching a song score screen, a POST request is sont to `/songfinished` with `{"title": "the title", "artist", "the artist"}` to indicate that the song has been sung an can be removed from the queue.
+- When reaching a song score screen, a POST request is sont to `/songfinished` with `{"title": "the title", "artist", "the artist"}` to indicate that the song has been sung and can be removed from the queue.
+
+The patch for USDX must be applied seperatly; this is no feature of the official USDX version.
 
 The selction/dequeuing is flexible: Users are free to select a song which is not queued next (i.e. if a person is missing right now or a song is broken).
 
