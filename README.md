@@ -4,7 +4,7 @@
 
 Participants at an UltraStar Karaoke party can open `/` to see a list of available songs and queue them to the global song queue.
 
-`/queue` displays the queue with the next song (and already sung songs), with an estimate when which song is played.
+`/queue` displays the queue with the next song, with an estimate when which song is played.
 
 This UltraStart main application communicates with the queue as follows:
 
