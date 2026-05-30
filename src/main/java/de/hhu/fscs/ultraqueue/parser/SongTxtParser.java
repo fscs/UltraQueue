@@ -17,6 +17,9 @@ import java.util.List;
  */
 public final class SongTxtParser {
 
+    private static final Duration FALLBACK_SONG_DURATION = Duration.ofSeconds(180);
+    private static final double INTRO_OUTRO_DURATION = 20.0;
+
     private SongTxtParser() { /* utility – no instances */ }
 
     /**
@@ -64,7 +67,6 @@ public final class SongTxtParser {
         String language = null;
         String genre = null;
         Integer year   = null;
-        Duration length = null;
 
         // values needed for the BPM‑based length calculation
         double bpm            = 0;                // beats per minute
@@ -86,22 +88,15 @@ public final class SongTxtParser {
                 String y = line.substring(6).trim();
                 try {
                     year = Integer.valueOf(y);
-                } catch (NumberFormatException ignored) { }
+                } catch (NumberFormatException _) { }
             } else if (line.startsWith("#BPM:")) {
                 String v = line.substring(5).trim();
                 try {
                     bpm = Double.parseDouble(v);
-                } catch (NumberFormatException ignored) { }
+                } catch (NumberFormatException _) { }
             }
 
-            // note lines – start beat + duration
-            // UltraStar note lines start with ':', '*', 'F', 'G', 'R' …
-            // Format (simplified):  <type> <startBeat> <beatLength> [...]
-            else if (line.startsWith(":")
-                    || line.startsWith("*")
-                    || line.startsWith("F")
-                    || line.startsWith("G")
-                    || line.startsWith("R")) {
+            else if (isNoteLine(line)) {
 
                 String[] parts = line.split("\\s+");
                 if (parts.length < 3) {
@@ -118,33 +113,17 @@ public final class SongTxtParser {
                     if (noteEnd > lastEndBeat) {
                         lastEndBeat = noteEnd;
                     }
-                } catch (NumberFormatException ignored) {
+                } catch (NumberFormatException _) {
                     // ignore a single broken note – it does not affect length
                 }
             }
             // any other line is ignored for the length calculation
         }
 
-        if (title == null || title.isBlank()) title = "Untitled";
-        if (artist == null || artist.isBlank()) artist = "Unknown";
+        if (isUnset(title)) title = "Untitled";
+        if (isUnset(artist)) artist = "Unknown";
 
-        if (bpm > 0
-                && firstStartBeat != Double.MAX_VALUE
-                && lastEndBeat   != Double.MIN_VALUE) {
-
-            double secondsPerBeat = 60.0 / bpm / 4; // the note timestampt are actually 1/4 BPM
-            double songSeconds = (lastEndBeat - firstStartBeat) * secondsPerBeat + 20.0; // guessed 20 s for intro/outro
-
-            // Guard against negative / nonsensical results
-            if (songSeconds < 0) songSeconds = 0;
-
-            long millis = Math.round(songSeconds * 1000);
-            length = Duration.ofMillis(millis);
-        }
-
-        if (length == null) {
-            length = Duration.ofSeconds(180); // 3 minutes
-        }
+        Duration length = songLength(bpm, firstStartBeat, lastEndBeat);
 
         return new Song.Builder()
                 .title(title)
@@ -156,6 +135,38 @@ public final class SongTxtParser {
                 .build();
     }
 
+    /**
+     * Note lines have the format <type> <startBeat> <beatLength> <text>
+     * NB: Text may have leading/trailing whitespace.
+     */
+    private static boolean isNoteLine(String line) {
+        return line.startsWith(":")
+                || line.startsWith("*")
+                || line.startsWith("F")
+                || line.startsWith("G")
+                || line.startsWith("R");
+    }
+
+    private static boolean isUnset(String title) {
+        return title == null || title.isBlank();
+    }
+
+    private static Duration songLength(double bpm, double firstStartBeat, double lastEndBeat) {
+        if (bpm <= 0 || firstStartBeat == Double.MAX_VALUE || lastEndBeat == Double.MIN_VALUE) {
+            return FALLBACK_SONG_DURATION;
+        }
+
+        double secondsPerBeat = 60.0 / bpm / 4; // the note timestamps are actually 1/4 BPM
+        double songSeconds = (lastEndBeat - firstStartBeat) * secondsPerBeat + INTRO_OUTRO_DURATION; // guessed duration for intro/outro
+
+        // Guard against negative / nonsensical results
+        if (songSeconds < 0) songSeconds = 0;
+
+        long millis = Math.round(songSeconds * 1000);
+        return Duration.ofMillis(millis);
+
+    }
+
     public static List<String> parseLyricsLines(List<String> lines) {
         List<String> result = new java.util.ArrayList<>();
         StringBuilder currentLine = new StringBuilder();
@@ -163,11 +174,7 @@ public final class SongTxtParser {
         for (String line : lines) {
             if (line.startsWith("-") || line.startsWith("E")) {
                 flushLyricsLine(result, currentLine);
-            } else if (line.startsWith(":")
-                    || line.startsWith("*")
-                    || line.startsWith("F")
-                    || line.startsWith("G")
-                    || line.startsWith("R")) {
+            } else if (isNoteLine(line)) {
                 String[] parts = line.split("\\s", 5);
                 if (parts.length >= 5) {
                     String token = parts[4];
