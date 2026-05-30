@@ -129,8 +129,8 @@ class SongCatalogServiceImplTest {
     @DisplayName("Search returns matching results")
     void test1() throws IOException {
         SongCatalogServiceImpl service = serviceWithFakeSongs();
-        Pageable pagable = Pageable.ofSize(10);
-        Page<Song> results = service.search("Foobar", pagable);
+        Pageable pageable = Pageable.ofSize(10);
+        Page<Song> results = service.search("Foobar", pageable);
         assertThat(results).hasSize(1);
         assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Foobar");
     }
@@ -139,8 +139,8 @@ class SongCatalogServiceImplTest {
     @DisplayName("Search ignores trailing space in title, because of mobile auto space completion")
     void test1b() throws IOException {
         SongCatalogServiceImpl service = serviceWithFakeSongs();
-        Pageable pagable = Pageable.ofSize(10);
-        Page<Song> results = service.search("Blabla ", pagable);
+        Pageable pageable = Pageable.ofSize(10);
+        Page<Song> results = service.search("Blabla ", pageable);
         assertThat(results).hasSize(1);
         // note that this test passes because we match with a song's string representation, which happen to have a space after the title right now
         assertThat(results.stream().findFirst().orElseThrow().title()).isEqualTo("Blabla");
@@ -150,8 +150,8 @@ class SongCatalogServiceImplTest {
     @DisplayName("Search ignores trailing space in artist, because of mobile auto space completion")
     void test1c() throws IOException {
         SongCatalogServiceImpl service = serviceWithFakeSongs();
-        Pageable pagable = Pageable.ofSize(10);
-        Page<Song> results = service.search("Foobar ", pagable);
+        Pageable pageable = Pageable.ofSize(10);
+        Page<Song> results = service.search("Foobar ", pageable);
         assertThat(results).hasSize(1);
         // note that this test passes because we match with a song's string representation, which happen to have a space after the artist right now
         assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Foobar");
@@ -161,8 +161,8 @@ class SongCatalogServiceImplTest {
     @DisplayName("Search is case insensitive matching results")
     void test2() throws IOException {
         SongCatalogServiceImpl service = serviceWithFakeSongs();
-        Pageable pagable = Pageable.ofSize(10);
-        Page<Song> results = service.search("foobar", pagable);
+        Pageable pageable = Pageable.ofSize(10);
+        Page<Song> results = service.search("foobar", pageable);
         assertThat(results).hasSize(1);
         assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Foobar");
     }
@@ -171,8 +171,8 @@ class SongCatalogServiceImplTest {
     @DisplayName("Search results can be sorted")
     void test3() throws IOException {
         SongCatalogServiceImpl service = serviceWithFakeSongs();
-        Pageable pagable = PageRequest.of(0, 10, Sort.by("artist"));
-        Page<Song> results = service.search("foobar", pagable);
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("artist"));
+        Page<Song> results = service.search("foobar", pageable);
         assertThat(results).hasSize(1);
         assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Foobar");
     }
@@ -181,8 +181,8 @@ class SongCatalogServiceImplTest {
     @DisplayName("Complete song list can be sorted")
     void test4() throws IOException {
         SongCatalogServiceImpl service = serviceWithFakeSongs();
-        Pageable pagable = PageRequest.of(0, 10, Sort.by("artist"));
-        Page<Song> results = service.findAll(pagable);
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("artist"));
+        Page<Song> results = service.findAll(pageable);
         assertThat(results).hasSize(2);
         assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Artist 1");
     }
