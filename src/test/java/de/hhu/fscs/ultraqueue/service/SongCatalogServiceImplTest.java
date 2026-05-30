@@ -136,6 +136,28 @@ class SongCatalogServiceImplTest {
     }
 
     @Test
+    @DisplayName("Search ignores trailing space in title, because of mobile auto space completion")
+    void test1b() throws IOException {
+        SongCatalogServiceImpl service = serviceWithFakeSongs();
+        Pageable pagable = Pageable.ofSize(10);
+        Page<Song> results = service.search("Blabla ", pagable);
+        assertThat(results).hasSize(1);
+        // note that this test passes because we match with a song's string representation, which happen to have a space after the title right now
+        assertThat(results.stream().findFirst().orElseThrow().title()).isEqualTo("Blabla");
+    }
+
+    @Test
+    @DisplayName("Search ignores trailing space in artist, because of mobile auto space completion")
+    void test1c() throws IOException {
+        SongCatalogServiceImpl service = serviceWithFakeSongs();
+        Pageable pagable = Pageable.ofSize(10);
+        Page<Song> results = service.search("Foobar ", pagable);
+        assertThat(results).hasSize(1);
+        // note that this test passes because we match with a song's string representation, which happen to have a space after the artist right now
+        assertThat(results.stream().findFirst().orElseThrow().artist()).isEqualTo("Foobar");
+    }
+
+    @Test
     @DisplayName("Search is case insensitive matching results")
     void test2() throws IOException {
         SongCatalogServiceImpl service = serviceWithFakeSongs();

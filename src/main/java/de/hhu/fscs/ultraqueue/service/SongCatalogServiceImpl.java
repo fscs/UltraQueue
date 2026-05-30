@@ -101,10 +101,10 @@ public class SongCatalogServiceImpl implements SongCatalogService {
         if (query == null) {
             query = "";
         }
-        String lowered = query.toLowerCase(Locale.ROOT);
+        String preprocessedQuery = query.toLowerCase(Locale.ROOT);
 
         List<Song> filtered = songById.values().stream()
-                .filter(s -> lowered.isEmpty() || s.toString().toLowerCase(Locale.ROOT).contains(lowered))
+                .filter(s -> preprocessedQuery.isEmpty() || s.toString().toLowerCase(Locale.ROOT).contains(preprocessedQuery))
                 .sorted(createComparator(pageable.getSort()))
                 .toList();
 
