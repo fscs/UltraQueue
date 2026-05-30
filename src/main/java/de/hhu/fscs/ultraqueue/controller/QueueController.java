@@ -16,11 +16,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
 import java.util.UUID;
 
+import static de.hhu.fscs.ultraqueue.controller.Common.ROLE_ADMIN;
+
 @Controller
 @RequestMapping("/queue")
 public class QueueController {
-
-    private static final String ROLE_ADMIN = "ADMIN";
     private static final String FLASH = "flash";
     private static final String ERROR = "error";
     private static final String REDIRECT_QUEUE = "redirect:/queue";
@@ -36,7 +36,7 @@ public class QueueController {
     /** Show the current queue with estimated start times. */
     @GetMapping
     public String viewQueue(Model model, HttpServletRequest request) {
-        addCurrentUserAttributes(model, request);
+        Common.addCurrentUserAttributes(model, request, props);
         String userId = UserContext.getCurrentUserId(request);
         List<QueueEntryDto> entries = queueService.getQueueWithEstimates(userId);
         model.addAttribute("queue", entries);
@@ -94,18 +94,6 @@ public class QueueController {
             redirectAttributes.addFlashAttribute(ERROR, ex.getMessage());
         }
         return REDIRECT_QUEUE;
-    }
-
-    private void addCurrentUserAttributes(Model model, HttpServletRequest request) {
-        boolean isAdmin = request.isUserInRole(ROLE_ADMIN);
-        String userId = UserContext.getCurrentUserId(request);
-        String username = isAdmin
-                ? props.admin().username()
-                : UserContext.getCurrentUsername(request).orElse(null);
-        model.addAttribute("currentUserId", userId);
-        model.addAttribute("currentUsername", username);
-        model.addAttribute("currentUserColor", UserContext.getColorForUserId(userId));
-        model.addAttribute("usernameSet", username != null && !username.isBlank());
     }
 
     private String resolveUsername(HttpServletRequest request, String submittedUsername, boolean isAdmin) {
