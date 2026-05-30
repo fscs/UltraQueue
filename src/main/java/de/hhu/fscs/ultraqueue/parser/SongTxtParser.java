@@ -156,39 +156,25 @@ public final class SongTxtParser {
                 .build();
     }
 
-    /**
-     * Extracts human-readable lyric lines from note rows.
-     */
     public static List<String> parseLyricsLines(List<String> lines) {
         List<String> result = new java.util.ArrayList<>();
         StringBuilder currentLine = new StringBuilder();
 
         for (String line : lines) {
-            if (line.startsWith("-")) {
+            if (line.startsWith("-") || line.startsWith("E")) {
                 flushLyricsLine(result, currentLine);
-                continue;
-            }
-            if (line.startsWith("E")) {
-                flushLyricsLine(result, currentLine);
-                break;
-            }
-
-            if (line.startsWith(":")
+            } else if (line.startsWith(":")
                     || line.startsWith("*")
                     || line.startsWith("F")
                     || line.startsWith("G")
                     || line.startsWith("R")) {
                 String[] parts = line.split("\\s", 5);
-                if (parts.length < 5) {
-                    continue;
+                if (parts.length >= 5) {
+                    String token = parts[4];
+                    if (!token.trim().isEmpty()) {
+                        currentLine.append(token.replace("~", ""));
+                    }
                 }
-
-                String token = parts[4];
-                if (token.trim().isEmpty()) {
-                    continue;
-                }
-
-                currentLine.append(token.replace("~", ""));
             }
         }
 
