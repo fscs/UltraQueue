@@ -38,8 +38,7 @@ class SongTxtParserTest {
             : 12 2 4  durch
             : 16 2 3  die
             : 20 2 0  Knei
-            : 24 2 0 pen\s
-            : 236 2 4 ken
+            : 24 2 0 pen
             : 240 2 3  sind
             : 244 13 0  leer,
             - 261
@@ -113,8 +112,25 @@ class SongTxtParserTest {
         List<String> lyrics = SongTxtParser.parseLyricsLines(lines);
 
         assertThat(lyrics).hasSize(4);
-        assertThat(lyrics.getFirst()).isEqualTo("Wir ziehen durch die Kneipenken sind leer,");
+        assertThat(lyrics.getFirst()).isEqualTo("Wir ziehen durch die Kneipen sind leer,");
         assertThat(lyrics.get(2)).endsWith(" nachts gepennt.");
         assertThat(lyrics.getLast()).endsWith("Millionär!");
+    }
+
+    @Test
+    @DisplayName("lyrics with spaces at end of line correctly preserve spaces")
+    void test_1() {
+        List<String> lines = List.of("""
+                #ARTIST:Schweinemensakapelle
+                #TITLE:Anspruchslos dürch die Nacht
+                #MP3:08-Anspruchslos.mp3
+                #BPM:256.05
+                : 1 2 0 Wir\s
+                : 4 2 4 zie
+                : 8 2 3 hen\s
+                : 12 2 4 durch""".split("\n"));
+
+        List<String> lyrics = SongTxtParser.parseLyricsLines(lines);
+        assertThat(lyrics).containsExactly("Wir ziehen durch");
     }
 }

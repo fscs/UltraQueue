@@ -163,9 +163,7 @@ public final class SongTxtParser {
         List<String> result = new java.util.ArrayList<>();
         StringBuilder currentLine = new StringBuilder();
 
-        for (String rawLine : lines) {
-            String line = rawLine.trim();
-
+        for (String line : lines) {
             if (line.startsWith("-")) {
                 flushLyricsLine(result, currentLine);
                 continue;
