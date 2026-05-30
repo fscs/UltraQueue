@@ -71,11 +71,11 @@ public final class SongQueue {
     }
 
     public void markFinished(UUID songId, Instant playedAt) {
-        playedLog.add(new PlayedSongLog(songId, playedAt));
-
         if(!queue.removeIf(e -> e.getSong().id().equals(songId))) {
             throw new IllegalStateException("Song not in queue");
         }
+        playedLog.add(new PlayedSongLog(songId, playedAt));
+
         reOrderPositions();
         persist();
     }

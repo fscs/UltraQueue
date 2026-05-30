@@ -9,8 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 class SongQueueTest {
 
@@ -77,6 +76,7 @@ class SongQueueTest {
     void recentlyPlayedCheckEnforcesInterval() {
         SongQueue queue = createQueue();
         Song song1 = song("Song 1", "Artist 1");
+        queue.enqueue(entry(song1, "user1", "User One"));
 
         Instant playedAt = Instant.parse("2024-05-20T10:00:00Z");
         queue.markFinished(song1.id(), playedAt);
@@ -89,6 +89,22 @@ class SongQueueTest {
                 .hasMessageContaining("wait 1 more minutes");
 
         queue.songNotRecentlyPlayedOrElseThrow(song1.id(), playedAt.plus(Duration.ofMinutes(5)), 5);
+    }
+
+    @Test
+    @DisplayName("a song which wasn't queued should not block queuing later (relevant if a song is played during tech set-up testing)")
+    void test1() {
+        SongQueue queue = createQueue();
+        Song song1 = song("Song 1", "Artist 1");
+
+        Instant playedAt = Instant.parse("2024-05-20T10:00:00Z");
+        try {
+            queue.markFinished(song1.id(), playedAt);
+        } catch(Exception _) {
+            // markFinished throws if song wasn't queued
+        }
+
+        assertThatCode(() -> queue.songNotRecentlyPlayedOrElseThrow(song1.id(), playedAt.plus(Duration.ofMinutes(4)),5)).doesNotThrowAnyException();
     }
 
     @Test
