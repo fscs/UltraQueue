@@ -66,10 +66,10 @@ class SongTxtParserTest {
 
     @Test
     @DisplayName("parseLines() calculates length from BPM + notes roughly correctly")
-    void parseLines_calculatesLengthCorrectly() {
+    void parseSongFile_calculatesLengthCorrectly() {
         List<String> lines = List.of(SIMPLE_SONG_TXT.split("\\R"));
 
-        Song song = SongTxtParser.parseLines(lines);
+        Song song = SongTxtParser.parseSongFile(lines);
 
         int mp3Length = 6 * 60 + 16;
         assertThat(song.getLengthSeconds()).isCloseTo(mp3Length, Percentage.withPercentage(10));
@@ -77,10 +77,10 @@ class SongTxtParserTest {
 
     @Test
     @DisplayName("parseLines() gets meta data correctly")
-    void parseLines_metadata() {
+    void parseSongFile_metadata() {
         List<String> lines = List.of(SIMPLE_SONG_TXT.split("\\R"));
 
-        Song song = SongTxtParser.parseLines(lines);
+        Song song = SongTxtParser.parseSongFile(lines);
 
         assertThat(song.title()).isEqualTo("Anspruchlos dürch die Nacht");
         assertThat(song.artist()).isEqualTo("Schweinemensakapelle");
@@ -92,14 +92,14 @@ class SongTxtParserTest {
 
     @Test
     @DisplayName("parseLines() uses default 3‑minute length when no data available")
-    void parseLines_defaultLengthWhenNoInfo() {
+    void parseSongFile_defaultLengthWhenNoInfo() {
         String txt = """
                 #TITLE: Empty
                 #ARTIST: Nobody
                 """;
 
         List<String> lines = List.of(txt.split("\\R"));
-        Song song = SongTxtParser.parseLines(lines);
+        Song song = SongTxtParser.parseSongFile(lines);
 
         assertThat(song.length()).isEqualTo(Duration.ofSeconds(3 * 60));
     }
@@ -132,5 +132,94 @@ class SongTxtParserTest {
 
         List<String> lyrics = SongTxtParser.parseLyricsLines(lines);
         assertThat(lyrics).containsExactly("Wir ziehen durch");
+    }
+
+    @Test
+    @DisplayName("length estimation supports decimal comma for bpm")
+    void test_1a() {
+        List<String> lines = List.of("""
+                #ARTIST:Schweinemensakapelle
+                #TITLE:Anspruchslos dürch die Nacht
+                #MP3:08-Anspruchslos.mp3
+                #BPM:256,05
+                : 1 2 0 Wir\s
+                : 4 2 4 zie
+                : 8 2 3 hen\s
+                : 12 2 4 durch
+                - 5822
+                : 5914 4 -2  ich
+                : 5921 5 -1  Mil
+                : 5929 5 2 lio
+                : 5938 10 3 när!
+                E""".split("\n"));
+
+        Song song = SongTxtParser.parseSongFile(lines);
+
+        int mp3Length = 6 * 60 + 16;
+        assertThat(song.getLengthSeconds()).isCloseTo(mp3Length, Percentage.withPercentage(10));
+    }
+
+    @Test
+    @DisplayName("gap is considered in length estimate")
+    void test_2() {
+        List<String> lines = List.of("""
+                #TITLE:The Title
+                #ARTIST:Artist 1
+                #LANGUAGE:English
+                #YEAR:2002
+                #BPM:252,1
+                #GAP:34070
+                : 0 4 5 The
+                : 5 20 3  xx
+                : 29 3 5  is
+                : 33 2 7  o
+                : 64 11 3 xx,
+                - 78
+                : 81 8 10  time
+                : 90 1 9  xx
+                : 2799 3 14  xx
+                : 2804 2 14 xx
+                : 2810 5 14 xx
+                - 2816
+                : 2848 11 14 ty
+                : 2880 3 13 ~
+                : 2885 29 14 ~
+                E""".split("\n"));
+
+        Song song = SongTxtParser.parseSongFile(lines);
+        int mp3length = 4 * 60 + 20;
+        assertThat(song.getLengthSeconds()).isCloseTo(mp3length, Percentage.withPercentage(13));
+    }
+
+    @Test
+    @DisplayName("parseLines() uses default 3‑minute length when BPM ist invalid")
+    void test3() {
+        List<String> lines = List.of("""
+                #TITLE:The Title
+                #ARTIST:Artist 1
+                #LANGUAGE:English
+                #YEAR:2002
+                #BPM:twohundred
+                #GAP:34070
+                : 0 4 5 The
+                : 5 20 3  xx
+                : 29 3 5  is
+                : 33 2 7  o
+                : 64 11 3 xx,
+                - 78
+                : 81 8 10  time
+                : 90 1 9  xx
+                : 2799 3 14  xx
+                : 2804 2 14 xx
+                : 2810 5 14 xx
+                - 2816
+                : 2848 11 14 ty
+                : 2880 3 13 ~
+                : 2885 29 14 ~
+                E""".split("\n"));
+
+        Song song = SongTxtParser.parseSongFile(lines);
+
+        assertThat(song.length()).isEqualTo(Duration.ofSeconds(3 * 60));
     }
 }

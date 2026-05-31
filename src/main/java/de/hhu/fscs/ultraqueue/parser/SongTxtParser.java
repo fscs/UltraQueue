@@ -13,7 +13,7 @@ import java.util.List;
  *
  * <p>No logging, no filesystem writes – the only I/O performed here is the
  * optional {@link #parse(Path)} method that reads the file into a
- * {@code List<String>}.  All parsing logic lives in {@link #parseLines(List)}.
+ * {@code List<String>}.  All parsing logic lives in {@link #parseSongFile(List)}.
  */
 public final class SongTxtParser {
 
@@ -24,7 +24,7 @@ public final class SongTxtParser {
 
     /**
      * Convenience wrapper that reads the file with {@link Files#readAllLines}
-     * and then delegates to {@link #parseLines(List)}.
+     * and then delegates to {@link #parseSongFile(List)}.
      *
      * @param txtFile   the *.txt* definition file
      * @return a fully populated {@link Song}
@@ -33,7 +33,7 @@ public final class SongTxtParser {
     public static Song parse(Path txtFile) {
         try {
             List<String> lines = Files.readAllLines(txtFile);
-            return parseLines(lines);
+            return parseSongFile(lines);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read song definition: " + txtFile, e);
         }
@@ -52,26 +52,23 @@ public final class SongTxtParser {
     }
 
     /**
-     * Parses the *already‑read* lines of a UltraStar *.txt* file.
-     *
-     * <p>The algorithm is exactly the same as the one you previously had
-     * inside {@code SongCatalogServiceImpl}, but it is now pure‑functional:
-     * given the same list of lines it will always return the same {@link Song}.
+     * Parse meta data and extract estimated length from Ultrastar txt
      *
      * @param lines      the file content (one element per line, no line‑breaks)
      * @return a {@link Song} instance
      */
-    public static Song parseLines(List<String> lines) {
-        String title   = null;
-        String artist  = null;
+    public static Song parseSongFile(List<String> lines) {
+        String title = null;
+        String artist = null;
         String language = null;
         String genre = null;
-        Integer year   = null;
+        Integer year = null;
 
         // values needed for the BPM‑based length calculation
-        double bpm            = 0;                // beats per minute
-        double firstStartBeat = Double.MAX_VALUE; // earliest start beat seen
-        double lastEndBeat    = Double.MIN_VALUE; // latest (start+duration) beat seen
+        double bpm = 0;
+        double firstStartBeat = Double.MAX_VALUE;
+        double lastEndBeat = Double.MIN_VALUE;
+        double gap = 0;
 
         for (String rawLine : lines) {
             String line = rawLine.trim();
@@ -84,16 +81,15 @@ public final class SongTxtParser {
                 language = line.substring(10).trim();
             } else if (line.startsWith("#GENRE:")) {
                 genre = line.substring(7).trim();
+            } else if (line.startsWith("#GAP:")) {
+                gap = parseDoubleProperty(line, gap);
             } else if (line.startsWith("#YEAR:")) {
                 String y = line.substring(6).trim();
                 try {
                     year = Integer.valueOf(y);
                 } catch (NumberFormatException _) { }
             } else if (line.startsWith("#BPM:")) {
-                String v = line.substring(5).trim();
-                try {
-                    bpm = Double.parseDouble(v);
-                } catch (NumberFormatException _) { }
+                bpm = parseDoubleProperty(line, bpm);
             }
 
             else if (isNoteLine(line)) {
@@ -123,7 +119,7 @@ public final class SongTxtParser {
         if (isUnset(title)) title = "Untitled";
         if (isUnset(artist)) artist = "Unknown";
 
-        Duration length = songLength(bpm, firstStartBeat, lastEndBeat);
+        Duration length = songLength(bpm, firstStartBeat, lastEndBeat, gap);
 
         return new Song.Builder()
                 .title(title)
@@ -133,6 +129,16 @@ public final class SongTxtParser {
                 .year(year)
                 .length(length)
                 .build();
+    }
+
+    private static double parseDoubleProperty(String line, double orElse) {
+        try {
+            String v = line.split(":", 2)[1].trim();
+            return Double.parseDouble(v.replace(",", "."));
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException _) {
+            // swallow
+        }
+        return orElse;
     }
 
     /**
@@ -151,7 +157,7 @@ public final class SongTxtParser {
         return title == null || title.isBlank();
     }
 
-    private static Duration songLength(double bpm, double firstStartBeat, double lastEndBeat) {
+    private static Duration songLength(double bpm, double firstStartBeat, double lastEndBeat, double gap) {
         if (bpm <= 0 || firstStartBeat == Double.MAX_VALUE || lastEndBeat == Double.MIN_VALUE) {
             return FALLBACK_SONG_DURATION;
         }
@@ -163,7 +169,7 @@ public final class SongTxtParser {
         if (songSeconds < 0) songSeconds = 0;
 
         long millis = Math.round(songSeconds * 1000);
-        return Duration.ofMillis(millis);
+        return Duration.ofMillis(millis + (long)gap);
 
     }
 
