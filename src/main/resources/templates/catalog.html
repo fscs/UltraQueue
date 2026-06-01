@@ -20,15 +20,12 @@
   <strong class="user-color-label" th:text="${currentUsername}"
           th:style="'--user-color: ' + ${currentUserColor}"></strong>
 </div>
-<div th:unless="${usernameSet}" class="alert alert-warning">
-  Choose a username the first time you queue a song.
-</div>
 
 <div th:unless="${usernameSet}" class="card mb-3">
   <div class="card-body">
     <label for="queue-username-input" class="form-label mb-1">Username for queueing</label>
     <input id="queue-username-input" type="text" class="form-control" placeholder="Choose username" autocomplete="nickname" maxlength="30" required>
-    <small class="text-muted">You only need to set this once if you want a queue a song. There might be restrictions on how many songs may be queued per user.</small>
+    <small class="text-muted">If you want to queue a song, you have to set a username once. There might be restrictions on how many songs may be queued per user.</small>
   </div>
 </div>
 

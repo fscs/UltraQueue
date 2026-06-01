@@ -20,9 +20,6 @@
   <strong class="user-color-label" th:text="${currentUsername}"
           th:style="'--user-color: ' + ${currentUserColor}"></strong>
 </div>
-<div th:unless="${usernameSet}" class="alert alert-warning">
-  You can choose a username the next time you queue a song.
-</div>
 
 <div th:if="${flash}" th:text="${flash}" class="alert alert-success"></div>
 <div th:if="${error}" th:text="${error}" class="alert alert-danger"></div>
