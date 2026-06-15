@@ -43,6 +43,13 @@ public class QueueController {
         return "queue";
     }
 
+    @GetMapping("/beamer")
+    public String viewQueueForBeamer(Model model, HttpServletRequest request) {
+        List<QueueEntryDto> entries = queueService.getQueueWithEstimates(null);
+        model.addAttribute("queue", entries);
+        return "beamer";
+    }
+
     /** Add a song to the *current* user’s queue (POST from catalogue). */
     @PostMapping("/add")
     public String addSong(@RequestParam @NotBlank String songId,

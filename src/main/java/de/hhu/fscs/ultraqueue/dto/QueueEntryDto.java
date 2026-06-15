@@ -2,6 +2,7 @@ package de.hhu.fscs.ultraqueue.dto;
 
 import de.hhu.fscs.ultraqueue.model.QueueEntry;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -17,20 +18,23 @@ public record QueueEntryDto(
         String artist,
         int position,
         String estimatedStart,   // formatted "HH:mm"
+        long waitTime,           // in minutes
         boolean ownedByMe,       // true if the entry belongs to the current user
         String username,
         String userColor) {
 
     public static QueueEntryDto of(QueueEntry e, Instant estimate, String currentUserId) {
-        String fmt = DateTimeFormatter.ofPattern("HH:mm")
+         String estStart = DateTimeFormatter.ofPattern("HH:mm")
                 .withZone(ZoneId.systemDefault())
                 .format(estimate);
+         long waitTime = Duration.between(Instant.now(), estimate).getSeconds() / 60;
         boolean mine = e.getUserId().equals(currentUserId);
         return new QueueEntryDto(e.getId(),
                 e.getSong().title(),
                 e.getSong().artist(),
                 e.getPosition(),
-                fmt,
+                estStart,
+                waitTime,
                 mine,
                 e.getUsername(),
                 e.getUserColor());

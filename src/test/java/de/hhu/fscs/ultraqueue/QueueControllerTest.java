@@ -65,6 +65,7 @@ class QueueControllerTest {
                     "Test Artist",
                     1,
                     "12:34",
+                    -1,
                     false,
                     "Alice",
                     "#123456");
