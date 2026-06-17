@@ -63,6 +63,7 @@ class SongTxtParserTest {
             : 5938 10 3 när!
             E
             """;
+    public static final Duration FALLBACK_LENGTH = Duration.ofSeconds(3 * 60);
 
     @Test
     @DisplayName("parseLines() calculates length from BPM + notes roughly correctly")
@@ -101,7 +102,7 @@ class SongTxtParserTest {
         List<String> lines = List.of(txt.split("\\R"));
         Song song = SongTxtParser.parseSongFile(lines);
 
-        assertThat(song.length()).isEqualTo(Duration.ofSeconds(3 * 60));
+        assertThat(song.length()).isEqualTo(FALLBACK_LENGTH);
     }
 
     @Test
@@ -220,6 +221,39 @@ class SongTxtParserTest {
 
         Song song = SongTxtParser.parseSongFile(lines);
 
-        assertThat(song.length()).isEqualTo(Duration.ofSeconds(3 * 60));
+        assertThat(song.length()).isEqualTo(FALLBACK_LENGTH);
+    }
+
+    @Test
+    @DisplayName("fall back to default length when song uses relative timestamps")
+    void test4() {
+        List<String> lines = List.of("""
+                #TITLE:x
+                #ARTIST:y
+                #LANGUAGE:English
+                #MP3 x.ogg
+                #COVER:x.jpg
+                #VIDEO:x.mp4
+                #RELATIVE:yes
+                #BPM:256,26
+                #GAP:8630
+                : 0 2 2 Ich\s
+                : 4 2 2 war\s
+                - 26 26
+                : 2 2 1 Und\s
+                : 60 2 4 ben\s
+                - 64 64
+                : 32 2 6 Wo
+                : 37 2 2 von\s
+                : 41 2 6 sol
+                : 44 2 2 len\s
+                : 48 2 6 wir\s
+                * 52 4 7 geh
+                * 60 2 4 gehn\s
+                E""".split("\n"));
+
+        Song song = SongTxtParser.parseSongFile(lines);
+
+        assertThat(song.length()).isEqualTo(FALLBACK_LENGTH);
     }
 }

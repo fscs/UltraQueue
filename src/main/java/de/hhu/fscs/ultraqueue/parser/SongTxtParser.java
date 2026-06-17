@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Pure utility class that converts the raw lines of an UltraStar *.txt* file
@@ -69,6 +70,7 @@ public final class SongTxtParser {
         double firstStartBeat = Double.MAX_VALUE;
         double lastEndBeat = Double.MIN_VALUE;
         double gap = 0;
+        boolean isRelativeFormat = false;
 
         for (String rawLine : lines) {
             String line = rawLine.trim();
@@ -90,6 +92,8 @@ public final class SongTxtParser {
                 } catch (NumberFormatException _) { }
             } else if (line.startsWith("#BPM:")) {
                 bpm = parseDoubleProperty(line, bpm);
+            } else if (line.startsWith("#RELATIVE:")) {
+                isRelativeFormat = line.toLowerCase(Locale.ROOT).contains("yes");
             }
 
             else if (isNoteLine(line)) {
@@ -119,7 +123,7 @@ public final class SongTxtParser {
         if (isUnset(title)) title = "Untitled";
         if (isUnset(artist)) artist = "Unknown";
 
-        Duration length = songLength(bpm, firstStartBeat, lastEndBeat, gap);
+        Duration length = isRelativeFormat ? FALLBACK_SONG_DURATION : songLength(bpm, firstStartBeat, lastEndBeat, gap);
 
         return new Song.Builder()
                 .title(title)
