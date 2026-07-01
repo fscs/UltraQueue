@@ -1,12 +1,23 @@
 package de.hhu.fscs.ultraqueue.parser;
 
+import de.hhu.fscs.ultraqueue.UltraQueueApplication;
+import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.model.Song;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriUtils;
+
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Pure utility class that converts the raw lines of an UltraStar *.txt* file
@@ -16,12 +27,16 @@ import java.util.Locale;
  * optional {@link #parse(Path)} method that reads the file into a
  * {@code List<String>}.  All parsing logic lives in {@link #parseSongFile(List)}.
  */
+@Component
 public final class SongTxtParser {
 
     private static final Duration FALLBACK_SONG_DURATION = Duration.ofSeconds(180);
     private static final double INTRO_OUTRO_DURATION = 20.0;
+    private static Path folder;
 
-    private SongTxtParser() { /* utility – no instances */ }
+    private SongTxtParser() {
+    }
+
 
     /**
      * Convenience wrapper that reads the file with {@link Files#readAllLines}
@@ -32,6 +47,7 @@ public final class SongTxtParser {
      * @throws IllegalStateException if the file cannot be read
      */
     public static Song parse(Path txtFile) {
+        folder = Path.of(txtFile.getParent().toString().substring("/home/felix/.ultrastardx/songs/".length()));
         try {
             List<String> lines = Files.readAllLines(txtFile);
             return parseSongFile(lines);
@@ -64,6 +80,7 @@ public final class SongTxtParser {
         String language = null;
         String genre = null;
         Integer year = null;
+        String cover = null;
 
         // values needed for the BPM‑based length calculation
         double bpm = 0;
@@ -94,6 +111,8 @@ public final class SongTxtParser {
                 bpm = parseDoubleProperty(line, bpm);
             } else if (line.startsWith("#RELATIVE:")) {
                 isRelativeFormat = line.toLowerCase(Locale.ROOT).contains("yes");
+            } else if (line.startsWith("#COVER:")) {
+                cover = line.substring(7).trim();
             }
 
             else if (isNoteLine(line)) {
@@ -125,6 +144,11 @@ public final class SongTxtParser {
 
         Duration length = isRelativeFormat ? FALLBACK_SONG_DURATION : songLength(bpm, firstStartBeat, lastEndBeat, gap);
 
+        String encoded = StreamSupport.stream(folder.resolve(cover).spliterator(), false)
+                .map(Path::toString)
+                .map(segment -> UriUtils.encodePathSegment(segment, StandardCharsets.UTF_8))
+                .collect(Collectors.joining("/"));
+
         return new Song.Builder()
                 .title(title)
                 .artist(artist)
@@ -132,6 +156,7 @@ public final class SongTxtParser {
                 .language(language)
                 .year(year)
                 .length(length)
+                .coverPath("files/"+encoded)
                 .build();
     }
 

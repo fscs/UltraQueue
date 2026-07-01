@@ -85,5 +85,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/static/**")
                 .addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/files/**")
+                .addResourceLocations("file:%s".formatted(props.songFolder()));
     }
 }

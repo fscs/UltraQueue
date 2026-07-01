@@ -1,5 +1,6 @@
 package de.hhu.fscs.ultraqueue.model;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
@@ -15,7 +16,9 @@ public record Song(
         String language, // optional, may be empty
         Integer year,    // optional, may be null
         Duration length, // length of the song in seconds (rounded)
-        String genre
+        String genre,
+        String coverPath
+
 ) {
 
     public Song {
@@ -33,6 +36,7 @@ public record Song(
         private Integer year;
         private Duration length;
         private String genre;
+        private String coverPath;
 
         public Builder title(String title) {
             this.title = title;
@@ -64,8 +68,13 @@ public record Song(
             return this;
         }
 
+        public Builder coverPath(String coverPath) {
+            this.coverPath = coverPath;
+            return this;
+        }
+
         public Song build() {
-            return new Song(id, title, artist, language, year, length, genre);
+            return new Song(id, title, artist, language, year, length, genre, coverPath);
         }
     }
 
