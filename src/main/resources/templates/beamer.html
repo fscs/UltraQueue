@@ -16,7 +16,7 @@
 <div th:if="${!queue.isEmpty()}" class="row">
     <div class="col">
         <div class="d-flex flex-column justify-content-center align-items-center" th:object="${queue.getFirst()}">
-            <img class="mt-5" src="../static/images/senredipity.jpg" width="80%">
+            <img class="mt-5" src="../static/images/senredipity.jpg" th:src="*{coverPath}" width="80%">
             <h2 class="mt-5 text-center" th:text="*{title}">Knuts Song</h2>
             <span class="h4 text-center" th:text="*{artist}">Justin Bieber</span>
             <span class="h4 text-center" th:text="*{username}">Sören</span>

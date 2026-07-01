@@ -32,9 +32,11 @@ public final class SongTxtParser {
 
     private static final Duration FALLBACK_SONG_DURATION = Duration.ofSeconds(180);
     private static final double INTRO_OUTRO_DURATION = 20.0;
-    private static Path folder;
+    private Path folder;
+    private UltraQueueProperties properties;
 
-    private SongTxtParser() {
+    private SongTxtParser(UltraQueueProperties properties) {
+        this.properties = properties;
     }
 
 
@@ -46,8 +48,8 @@ public final class SongTxtParser {
      * @return a fully populated {@link Song}
      * @throws IllegalStateException if the file cannot be read
      */
-    public static Song parse(Path txtFile) {
-        folder = Path.of(txtFile.getParent().toString().substring("/home/felix/.ultrastardx/songs/".length()));
+    public Song parse(Path txtFile) {
+        folder = Path.of(txtFile.getParent().toString().substring(properties.songFolder().length()));
         try {
             List<String> lines = Files.readAllLines(txtFile);
             return parseSongFile(lines);
@@ -59,7 +61,7 @@ public final class SongTxtParser {
     /**
      * Reads and extracts plain lyric lines from an UltraStar *.txt* file.
      */
-    public static List<String> parseLyrics(Path txtFile) {
+    public List<String> parseLyrics(Path txtFile) {
         try {
             List<String> lines = Files.readAllLines(txtFile);
             return parseLyricsLines(lines);
@@ -74,7 +76,7 @@ public final class SongTxtParser {
      * @param lines      the file content (one element per line, no line‑breaks)
      * @return a {@link Song} instance
      */
-    public static Song parseSongFile(List<String> lines) {
+    public Song parseSongFile(List<String> lines) {
         String title = null;
         String artist = null;
         String language = null;
@@ -156,11 +158,11 @@ public final class SongTxtParser {
                 .language(language)
                 .year(year)
                 .length(length)
-                .coverPath("files/"+encoded)
+                .coverPath("/files/"+encoded)
                 .build();
     }
 
-    private static double parseDoubleProperty(String line, double orElse) {
+    private double parseDoubleProperty(String line, double orElse) {
         try {
             String v = line.split(":", 2)[1].trim();
             return Double.parseDouble(v.replace(",", "."));

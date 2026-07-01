@@ -61,6 +61,10 @@ public final class QueueEntry {
         this.position = position;
     }
 
+    public String getCoverPath() {
+        return song.coverPath();
+    }
+
     // -----------------------------------------------------------------
     // Equals / hashCode – based on the immutable primary key
     // -----------------------------------------------------------------

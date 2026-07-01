@@ -40,8 +40,10 @@ public class SongCatalogServiceImpl implements SongCatalogService {
 
     /** (title‑lowercase, artist‑lowercase) → UUID – gives O(1) lookup for the API */
     private final Map<String, UUID> titleArtistIndex = new ConcurrentHashMap<>();
+    private final SongTxtParser songTxtParser;
 
-    public SongCatalogServiceImpl(UltraQueueProperties props) {
+    public SongCatalogServiceImpl(UltraQueueProperties props, SongTxtParser songTxtParser) {
+        this.songTxtParser = songTxtParser;
         this.props = props;
     }
 
@@ -72,7 +74,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
      *  ----------------------------------------------------------------- */
     private void processSongFile(Path txt) {
         try {
-            Song song = SongTxtParser.parse(txt);
+            Song song = songTxtParser.parse(txt);
             songById.put(song.id(), song);
             songTxtById.put(song.id(), txt);
             String key = makeTitleArtistKey(song.title(), song.artist());
@@ -131,7 +133,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
             return Optional.empty();
         }
         try {
-            return Optional.of(SongTxtParser.parseLyrics(txtPath));
+            return Optional.of(songTxtParser.parseLyrics(txtPath));
         } catch (RuntimeException ex) {
             log.warn("Unable to read lyrics for song {} from {}", id, txtPath, ex);
             return Optional.empty();

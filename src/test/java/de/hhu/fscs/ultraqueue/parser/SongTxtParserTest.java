@@ -4,12 +4,15 @@ import de.hhu.fscs.ultraqueue.model.Song;
 import org.assertj.core.data.Percentage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Component
 class SongTxtParserTest {
 
     // -----------------------------------------------------------------
@@ -65,12 +68,15 @@ class SongTxtParserTest {
             """;
     public static final Duration FALLBACK_LENGTH = Duration.ofSeconds(3 * 60);
 
+    @Autowired
+    private SongTxtParser songTxtParser;
+
     @Test
     @DisplayName("parseLines() calculates length from BPM + notes roughly correctly")
     void parseSongFile_calculatesLengthCorrectly() {
         List<String> lines = List.of(SIMPLE_SONG_TXT.split("\\R"));
 
-        Song song = SongTxtParser.parseSongFile(lines);
+        Song song = songTxtParser.parseSongFile(lines);
 
         int mp3Length = 6 * 60 + 16;
         assertThat(song.getLengthSeconds()).isCloseTo(mp3Length, Percentage.withPercentage(10));
@@ -81,7 +87,7 @@ class SongTxtParserTest {
     void parseSongFile_metadata() {
         List<String> lines = List.of(SIMPLE_SONG_TXT.split("\\R"));
 
-        Song song = SongTxtParser.parseSongFile(lines);
+        Song song = songTxtParser.parseSongFile(lines);
 
         assertThat(song.title()).isEqualTo("Anspruchlos dürch die Nacht");
         assertThat(song.artist()).isEqualTo("Schweinemensakapelle");
@@ -100,7 +106,7 @@ class SongTxtParserTest {
                 """;
 
         List<String> lines = List.of(txt.split("\\R"));
-        Song song = SongTxtParser.parseSongFile(lines);
+        Song song = songTxtParser.parseSongFile(lines);
 
         assertThat(song.length()).isEqualTo(FALLBACK_LENGTH);
     }
@@ -154,7 +160,7 @@ class SongTxtParserTest {
                 : 5938 10 3 när!
                 E""".split("\n"));
 
-        Song song = SongTxtParser.parseSongFile(lines);
+        Song song = songTxtParser.parseSongFile(lines);
 
         int mp3Length = 6 * 60 + 16;
         assertThat(song.getLengthSeconds()).isCloseTo(mp3Length, Percentage.withPercentage(10));
@@ -187,7 +193,7 @@ class SongTxtParserTest {
                 : 2885 29 14 ~
                 E""".split("\n"));
 
-        Song song = SongTxtParser.parseSongFile(lines);
+        Song song = songTxtParser.parseSongFile(lines);
         int mp3length = 4 * 60 + 20;
         assertThat(song.getLengthSeconds()).isCloseTo(mp3length, Percentage.withPercentage(13));
     }
@@ -219,7 +225,7 @@ class SongTxtParserTest {
                 : 2885 29 14 ~
                 E""".split("\n"));
 
-        Song song = SongTxtParser.parseSongFile(lines);
+        Song song = songTxtParser.parseSongFile(lines);
 
         assertThat(song.length()).isEqualTo(FALLBACK_LENGTH);
     }
@@ -252,7 +258,7 @@ class SongTxtParserTest {
                 * 60 2 4 gehn\s
                 E""".split("\n"));
 
-        Song song = SongTxtParser.parseSongFile(lines);
+        Song song = songTxtParser.parseSongFile(lines);
 
         assertThat(song.length()).isEqualTo(FALLBACK_LENGTH);
     }

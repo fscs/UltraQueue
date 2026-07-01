@@ -21,7 +21,8 @@ public record QueueEntryDto(
         long waitTime,           // in minutes
         boolean ownedByMe,       // true if the entry belongs to the current user
         String username,
-        String userColor) {
+        String userColor,
+        String coverPath) {
 
     public static QueueEntryDto of(QueueEntry e, Instant estimate, String currentUserId) {
          String estStart = DateTimeFormatter.ofPattern("HH:mm")
@@ -37,6 +38,7 @@ public record QueueEntryDto(
                 waitTime,
                 mine,
                 e.getUsername(),
-                e.getUserColor());
+                e.getUserColor(),
+                e.getCoverPath());
     }
 }
