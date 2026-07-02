@@ -1,6 +1,7 @@
 package de.hhu.fscs.ultraqueue.controller;
 
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
+import de.hhu.fscs.ultraqueue.service.QueueEventService;
 import de.hhu.fscs.ultraqueue.web.UserContext;
 import de.hhu.fscs.ultraqueue.dto.QueueEntryDto;
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
@@ -8,11 +9,14 @@ import de.hhu.fscs.ultraqueue.service.QueueService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,10 +31,12 @@ public class QueueController {
 
     private final UltraQueueProperties props;
     private final QueueService queueService;
+    private final QueueEventService queueEventService;
 
-    public QueueController(UltraQueueProperties props, QueueService queueService) {
+    public QueueController(UltraQueueProperties props, QueueService queueService, QueueEventService queueEventService) {
         this.props = props;
         this.queueService = queueService;
+        this.queueEventService = queueEventService;
     }
 
     /** Show the current queue with estimated start times. */
@@ -50,6 +56,18 @@ public class QueueController {
         return "beamer";
     }
 
+    @GetMapping("/beamer/fragment")
+    public String queueFragment(Model model) {
+        model.addAttribute("queue", queueService.getQueueWithEstimates(null));
+        return "fragments/queue :: queueFragment";
+    }
+
+    @GetMapping(value = "/beamer/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @ResponseBody
+    public SseEmitter events() {
+        return queueEventService.subscribe();
+    }
+
     /** Add a song to the *current* user’s queue (POST from catalogue). */
     @PostMapping("/add")
     public String addSong(@RequestParam @NotBlank String songId,
@@ -63,6 +81,7 @@ public class QueueController {
             String resolvedUsername = resolveUsername(request, username, isAdmin);
             UserContext.setUsernameCookie(response, userId, resolvedUsername, props.cookie().signingSecret());
             queueService.addSong(userId, resolvedUsername, UUID.fromString(songId), isAdmin);
+            queueEventService.notifyQueueChanged();
             redirectAttributes.addFlashAttribute(FLASH, "Song added to your queue.");
         } catch (BusinessException ex) {
             redirectAttributes.addFlashAttribute(ERROR, ex.getMessage());
@@ -79,6 +98,7 @@ public class QueueController {
         boolean isAdmin = request.isUserInRole(ROLE_ADMIN);
         try {
             queueService.removeEntry(userId, entryId, isAdmin);
+            queueEventService.notifyQueueChanged();
             redirectAttributes.addFlashAttribute(FLASH, "Entry removed.");
         } catch (Exception ex) {
             redirectAttributes.addFlashAttribute(ERROR, ex.getMessage());
@@ -96,6 +116,7 @@ public class QueueController {
         boolean isAdmin = request.isUserInRole(ROLE_ADMIN);
         try {
             queueService.replaceEntry(userId, entryId, UUID.fromString(newSongId), isAdmin);
+            queueEventService.notifyQueueChanged();
             redirectAttributes.addFlashAttribute(FLASH, "Entry replaced.");
         } catch (Exception ex) {
             redirectAttributes.addFlashAttribute(ERROR, ex.getMessage());

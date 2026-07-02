@@ -1,6 +1,7 @@
 package de.hhu.fscs.ultraqueue.controller;
 
 import de.hhu.fscs.ultraqueue.dto.SongFinishedDto;
+import de.hhu.fscs.ultraqueue.service.QueueEventService;
 import de.hhu.fscs.ultraqueue.service.QueueService;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -15,9 +16,11 @@ import java.util.UUID;
 public class ApiController {
 
     private final QueueService queueService;
+    private final QueueEventService queueEventService;
 
-    public ApiController(QueueService queueService) {
+    public ApiController(QueueService queueService, QueueEventService queueEventService) {
         this.queueService = queueService;
+        this.queueEventService = queueEventService;
     }
 
     /** UltraStar asks for the title of the next song (plain text). */
@@ -33,6 +36,7 @@ public class ApiController {
             produces = MediaType.TEXT_PLAIN_VALUE)
     public String songFinished(@Valid @RequestBody SongFinishedDto payload) {
         UUID songId = queueService.resolveSongId(payload.title(), payload.artist());
+        queueEventService.notifyQueueChanged();
         queueService.markFinished(songId);
         return "OK";
     }

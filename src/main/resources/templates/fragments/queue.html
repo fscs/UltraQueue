@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="queueFragment">
+
+    <div th:if="${queue.isEmpty()}">
+        <div class="h2 text-center">
+            Die Warteschlange ist leer.
+        </div>
+    </div>
+
+    <div th:if="${!queue.isEmpty()}" class="row">
+        <div class="col">
+            <div class="d-flex flex-column justify-content-center align-items-center"
+                 th:object="${queue.getFirst()}">
+
+                <img class="mt-5"
+                     th:src="*{coverPath}"
+                     width="80%">
+
+                <h2 class="mt-5 text-center"
+                    th:text="*{title}"></h2>
+
+                <span class="h4 text-center"
+                      th:text="*{artist}"></span>
+
+                <span class="h4 text-center"
+                      th:text="*{username}"></span>
+
+            </div>
+        </div>
+
+        <div class="col">
+            <table class="table table-striped table-hover mt-3 fs-3">
+                <thead class="table-dark">
+                <tr th:if="${queue.size() >= 2}">
+                    <th>Title</th>
+                    <th>User</th>
+                    <th>in</th>
+                </tr>
+                <tr th:if="${queue.size() < 2}">
+                    <th>Hier könnte ihr Song stehen</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="e : ${queue.size() >= 2 ? queue.subList(1, queue.size()) : null}">
+                    <td th:text="${e.title}"></td>
+                    <td th:text="${e.username}"></td>
+                    <td class="text-nowrap">
+                        <span th:text="${e.waitTime}"></span> min
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
