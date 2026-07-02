@@ -22,6 +22,8 @@ public final class SongQueue {
     private final QueueStateRepository repository;
     private final List<QueueEntry> queue;
     private final List<PlayedSongLog> playedLog;
+    private Instant nextSongStarted;
+    private long currentSongLengthSeconds;
 
     public SongQueue(QueueStateRepository repository) {
         this.repository = repository;
@@ -36,6 +38,10 @@ public final class SongQueue {
 
     public boolean isEmpty() {
         return queue.isEmpty();
+    }
+
+    public long getCurrentSongLengthSeconds() {
+        return currentSongLengthSeconds;
     }
 
     /**
@@ -121,6 +127,35 @@ public final class SongQueue {
         repository.saveQueue(new QueueStateRepository.QueueState(
                 new ArrayList<>(queue),
                 new ArrayList<>(playedLog)));
+    }
+
+    public Instant getQueueStartedAt() {
+        return nextSongStarted;
+    }
+
+    public void setNextSongStarted(Instant nextSongStarted) {
+        this.nextSongStarted = nextSongStarted;
+        if (!queue.isEmpty()) {
+            this.currentSongLengthSeconds = queue.getFirst().getSong().getLengthSeconds();
+        }
+    }
+
+    public Instant getRawEstimatedStart(QueueEntry entry, Instant anchor) {
+
+        long cumulative = 0;
+
+        for (QueueEntry e : queue) {
+
+            if (e.equals(entry)) {
+                break;
+            }
+
+            cumulative += e.getSong().getLengthSeconds();
+        }
+
+        Instant base = (anchor != null) ? anchor : Instant.now();
+
+        return base.plusSeconds(cumulative);
     }
 }
 

@@ -2,7 +2,6 @@ package de.hhu.fscs.ultraqueue.dto;
 
 import de.hhu.fscs.ultraqueue.model.QueueEntry;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -18,19 +17,29 @@ public record QueueEntryDto(
         String artist,
         int position,
         String estimatedStart,   // formatted "HH:mm"
-        long waitTime,           // in minutes
+        String waitTime,         // in minutes or Soon if <= 1 min
         boolean ownedByMe,       // true if the entry belongs to the current user
         String username,
         String userColor,
-        String coverPath) {
+        String coverPath
+) {
 
-    public static QueueEntryDto of(QueueEntry e, Instant estimate, String currentUserId) {
-         String estStart = DateTimeFormatter.ofPattern("HH:mm")
+    public static QueueEntryDto of(
+            QueueEntry e,
+            Instant estimate,
+            String currentUserId,
+            long waitSeconds
+    ) {
+        String estStart = DateTimeFormatter.ofPattern("HH:mm")
                 .withZone(ZoneId.systemDefault())
                 .format(estimate);
-         long waitTime = Duration.between(Instant.now(), estimate).getSeconds() / 60;
+
         boolean mine = e.getUserId().equals(currentUserId);
-        return new QueueEntryDto(e.getId(),
+
+        String waitTime = waitSeconds <= 60 ? "Soon" : (waitSeconds / 60) + " min";
+
+        return new QueueEntryDto(
+                e.getId(),
                 e.getSong().title(),
                 e.getSong().artist(),
                 e.getPosition(),
@@ -39,6 +48,7 @@ public record QueueEntryDto(
                 mine,
                 e.getUsername(),
                 e.getUserColor(),
-                e.getCoverPath());
+                e.getCoverPath()
+        );
     }
 }

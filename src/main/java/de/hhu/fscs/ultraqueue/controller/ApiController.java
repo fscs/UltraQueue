@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -28,6 +29,13 @@ public class ApiController {
     public String nextSong() {
         // Returns empty string when the queue is empty – UltraStar will just stay on the selection screen with search open.
         return queueService.getNextSongTitle();
+    }
+
+    /** UltraStar anounces that its playing the next song */
+    @GetMapping(value = "/startedplaying", produces = MediaType.TEXT_PLAIN_VALUE)
+    public String startedPlaying() {
+        queueService.setTimeNextSongStartedToCurrentFirst(Instant.now());
+        return "OK";
     }
 
     /** UltraStar informs that a song has finished (JSON payload). */

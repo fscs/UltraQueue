@@ -16,6 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -64,10 +65,10 @@ public class QueueService {
             if (props.onlyOneSongPerUser() && songQueue.hasEntryForUser(userId) && !isAdmin) {
                 throw new BusinessException("You already have a song in the queue.");
             }
-            
+
             Song song = getSongByIdOrElseThrow(songId);
 
-            if(!isAdmin) {
+            if (!isAdmin) {
                 songMayBeQueuedOrElseThrow(songId);
             }
 
@@ -106,10 +107,10 @@ public class QueueService {
             if (!old.getUserId().equals(userId) && !isAdmin) {
                 throw new AccessDeniedException("Can replace only your own entry");
             }
-            
+
             Song newSong = getSongByIdOrElseThrow(newSongId);
 
-            if(!isAdmin) {
+            if (!isAdmin) {
                 songMayBeQueuedOrElseThrow(newSongId);
             }
 
@@ -136,7 +137,9 @@ public class QueueService {
         return songQueue.hasSong(newSongId);
     }
 
-    /** Called by the UltraStar engine when a song finishes */
+    /**
+     * Called by the UltraStar engine when a song finishes
+     */
     public void markFinished(UUID songId) {
         lock.lock();
         try {
@@ -165,20 +168,88 @@ public class QueueService {
         lock.lock();
         try {
             List<QueueEntryDto> result = new ArrayList<>();
-            Instant now = Instant.now(clock);
+
             List<QueueEntry> queue = songQueue.entriesSnapshot();
-            // the first song is usually currently playing, so to have estimates which are _not too far_ in the future, just assume that song is already over
-            long cumulatedSec = queue.isEmpty() ? 0 : -queue.getFirst().getSong().getLengthSeconds();
+            Instant now = Instant.now(clock);
+
+            Instant anchor = songQueue.getQueueStartedAt();
+
             for (QueueEntry e : queue) {
-                cumulatedSec += e.getSong().getLengthSeconds();
-                Instant estimate = now.plusSeconds(cumulatedSec);
-                result.add(QueueEntryDto.of(e, estimate, currentUserId));
+
+                Instant estimate = songQueue.getRawEstimatedStart(e, anchor);
+
+                long waitSeconds;
+
+                if (anchor == null) {
+                    // queue not started yet → pure countdown
+                    waitSeconds = Duration.between(now, estimate).getSeconds();
+                } else {
+                    // normal + freeze-safe countdown
+                    if (anchor.getEpochSecond() <= now.getEpochSecond() - songQueue.getCurrentSongLengthSeconds()) {
+                        anchor = Instant.now(clock);
+                    }
+                    estimate = songQueue.getRawEstimatedStart(e, anchor);
+                    long diff = Duration.between(now, estimate).getSeconds();
+
+                    waitSeconds = Math.max(0, diff);
+                }
+
+                result.add(QueueEntryDto.of(
+                        e,
+                        estimate,
+                        currentUserId,
+                        waitSeconds
+                ));
+            }
+
+            return result;
+
+        } finally {
+            lock.unlock();
+        }
+    }
+    /*
+    public List<QueueEntryDto> getQueueWithEstimates(String currentUserId) {
+        lock.lock();
+        try {
+            List<QueueEntryDto> result = new ArrayList<>();
+
+            List<QueueEntry> queue = songQueue.entriesSnapshot();
+            Instant now = Instant.now(clock);
+            Instant anchor = songQueue.getQueueStartedAt();
+
+            for (QueueEntry e : queue) {
+                Instant estimate = songQueue.getRawEstimatedStart(e, anchor);
+
+                long waitSeconds;
+
+                if (anchor == null) {
+                    estimate = songQueue.getRawEstimatedStart(e, anchor);
+                    waitSeconds = Duration.between(now, estimate).getSeconds();
+                } else {
+                    if (anchor.getEpochSecond() <= now.getEpochSecond() - queue.getFirst().getSong().getLengthSeconds()) {
+                        anchor = Instant.now(clock).minusSeconds(queue.getFirst().getSong().getLengthSeconds());
+                    }
+                    System.out.println(anchor);
+                    estimate = songQueue.getRawEstimatedStart(e, anchor);
+                    long diff = Duration.between(now, estimate).getSeconds();
+
+                    waitSeconds = Math.max(0, diff);
+                }
+
+                result.add(QueueEntryDto.of(
+                        e,
+                        estimate,
+                        currentUserId,
+                        waitSeconds
+                ));
             }
             return result;
         } finally {
             lock.unlock();
         }
     }
+    */
 
     public Optional<QueuedSongDetailsDto> getQueuedSongDetails(UUID entryId) {
         lock.lock();
@@ -214,6 +285,7 @@ public class QueueService {
 
     /**
      * Resolve an incoming title+artist pair to the internal Song UUID.
+     *
      * @throws NotFoundException if the song does not exist.
      */
     public UUID resolveSongId(String title, String artist) {
@@ -221,5 +293,14 @@ public class QueueService {
                 .orElseThrow(() -> new NotFoundException(
                         "Song not found in catalog: %s – %s".formatted(title, artist)))
                 .id();
+    }
+
+    public void setTimeNextSongStartedToCurrentFirst(Instant time) {
+        lock.lock();
+        try {
+            songQueue.setNextSongStarted(time);
+        } finally {
+            lock.unlock();
+        }
     }
 }

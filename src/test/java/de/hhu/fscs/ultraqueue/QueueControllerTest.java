@@ -65,10 +65,12 @@ class QueueControllerTest {
                     "Test Artist",
                     1,
                     "12:34",
-                    -1,
+                    "-1",
                     false,
                     "Alice",
-                    "#123456");
+                    "#123456",
+                    "");
+            // TODO:fix test
 
             Mockito.when(queueService.getQueueWithEstimates("test-user"))
                     .thenReturn(java.util.Collections.singletonList(entry));
