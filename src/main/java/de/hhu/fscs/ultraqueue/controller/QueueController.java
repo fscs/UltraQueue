@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static de.hhu.fscs.ultraqueue.controller.Common.ROLE_ADMIN;
+import static de.hhu.fscs.ultraqueue.controller.Common.ROLE_PRIVILEGED;
 
 @Controller
 @RequestMapping("/queue")
@@ -28,6 +29,7 @@ public class QueueController {
     private static final String FLASH = "flash";
     private static final String ERROR = "error";
     private static final String REDIRECT_QUEUE = "redirect:/queue";
+    private static final String REDIRECT_CATALOG = "redirect:/";
 
     private final UltraQueueProperties props;
     private final QueueService queueService;
@@ -44,6 +46,7 @@ public class QueueController {
     public String viewQueue(Model model, HttpServletRequest request) {
         Common.addCurrentUserAttributes(model, request, props);
         String userId = UserContext.getCurrentUserId(request);
+        if(request.isUserInRole(ROLE_PRIVILEGED)) userId = null;
         List<QueueEntryDto> entries = queueService.getQueueWithEstimates(userId);
         model.addAttribute("queue", entries);
         return "queue";
@@ -77,12 +80,14 @@ public class QueueController {
                           RedirectAttributes redirectAttributes) {
         try {
             boolean isAdmin = request.isUserInRole(ROLE_ADMIN);
+            boolean isPrivileged = request.isUserInRole(ROLE_PRIVILEGED);
             String userId = UserContext.getCurrentUserId(request);
             String resolvedUsername = resolveUsername(request, username, isAdmin);
-            UserContext.setUsernameCookie(response, userId, resolvedUsername, props.cookie().signingSecret());
-            queueService.addSong(userId, resolvedUsername, UUID.fromString(songId), isAdmin);
+            if (!isPrivileged) UserContext.setUsernameCookie(response, userId, resolvedUsername, props.cookie().signingSecret());
+            queueService.addSong(userId, resolvedUsername, UUID.fromString(songId), isAdmin || isPrivileged);
             queueEventService.notifyQueueChanged();
             redirectAttributes.addFlashAttribute(FLASH, "Song added to your queue.");
+            if (isPrivileged) return REDIRECT_CATALOG;
         } catch (BusinessException ex) {
             redirectAttributes.addFlashAttribute(ERROR, ex.getMessage());
         }

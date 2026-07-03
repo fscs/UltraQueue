@@ -7,11 +7,13 @@ import org.springframework.ui.Model;
 
 class Common {
     static final String ROLE_ADMIN = "ADMIN";
+    static final String ROLE_PRIVILEGED = "PRIVILEGED";
 
     private Common() { /* utility */ }
 
     static void addCurrentUserAttributes(Model model, HttpServletRequest request, UltraQueueProperties props) {
         boolean isAdmin = request.isUserInRole(ROLE_ADMIN);
+        boolean isPrivileged = request.isUserInRole(ROLE_PRIVILEGED);
         String userId = UserContext.getCurrentUserId(request);
         String username = isAdmin
                 ? props.admin().username()

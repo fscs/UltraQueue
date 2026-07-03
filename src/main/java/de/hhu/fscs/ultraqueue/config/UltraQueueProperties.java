@@ -14,7 +14,8 @@ public record UltraQueueProperties(
         @Min(0) int minIntervalMinutes,
         @NotNull Pagination pagination,
         @NotNull Admin admin,
-        @NotNull Cookie cookie
+        @NotNull Cookie cookie,
+        @NotNull PrivilegedUser privilegedUser
 ) {
 
     public record Pagination(
@@ -28,5 +29,10 @@ public record UltraQueueProperties(
 
     public record Cookie(
             @NotBlank String signingSecret
+    ) {}
+
+    public record PrivilegedUser(
+            @NotBlank String username,
+            @NotBlank String password
     ) {}
 }

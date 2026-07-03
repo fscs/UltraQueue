@@ -13,6 +13,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
+import java.util.Collection;
+import java.util.List;
+
 /* -----------------------------------------------------------------------
  *  Security configuration – admin only via HTTP Basic Auth.
  * ----------------------------------------------------------------------- */
@@ -64,6 +67,12 @@ public class SecurityConfig {
                 .password(props.admin().password())
                 .roles("ADMIN")
                 .build();
-        return new InMemoryUserDetailsManager(admin);
+
+        var beamerUser = User.withUsername(props.privilegedUser().username())
+                .passwordEncoder(NoOpPasswordEncoder.getInstance()::encode)
+                .password(props.privilegedUser().password())
+                .roles("PRIVILEGED")
+                .build();
+        return new InMemoryUserDetailsManager(admin, beamerUser);
     }
 }

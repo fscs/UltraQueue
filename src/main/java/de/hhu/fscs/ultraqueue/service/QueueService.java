@@ -165,6 +165,7 @@ public class QueueService {
     }
 
     public List<QueueEntryDto> getQueueWithEstimates(String currentUserId) {
+
         lock.lock();
         try {
             List<QueueEntryDto> result = new ArrayList<>();
