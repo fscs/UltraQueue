@@ -150,10 +150,11 @@ public class QueueService {
         }
     }
 
-    public String getNextSongTitle() {
+    public String getNextSongTitleAndArtist() {
         lock.lock();
         try {
-            return songQueue.nextSongTitle();
+            if (songQueue.getNextSong() == null) return "";
+            return songQueue.getNextSong().title() + " " +  songQueue.getNextSong().artist();
         } finally {
             lock.unlock();
         }

@@ -28,7 +28,7 @@ public class ApiController {
     @GetMapping(value = "/nextsong", produces = MediaType.TEXT_PLAIN_VALUE)
     public String nextSong() {
         // Returns empty string when the queue is empty – UltraStar will just stay on the selection screen with search open.
-        return queueService.getNextSongTitle();
+        return queueService.getNextSongTitleAndArtist();
     }
 
     /** UltraStar anounces that its playing the next song */

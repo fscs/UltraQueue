@@ -106,11 +106,11 @@ public final class SongQueue {
         }
     }
 
-    public String nextSongTitle() {
+    public Song getNextSong() {
         if (queue.isEmpty()) {
-            return "";
+            return null;
         }
-        return queue.getFirst().getSong().title();
+        return queue.getFirst().getSong();
     }
 
     public List<QueueEntry> entriesSnapshot() {
