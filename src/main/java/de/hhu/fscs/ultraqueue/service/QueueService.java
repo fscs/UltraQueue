@@ -297,10 +297,14 @@ public class QueueService {
                 .id();
     }
 
-    public void setTimeNextSongStartedToCurrentFirst(Instant time) {
+    public void setTimeNextSongStartedToCurrentFirst(Instant time, UUID songId) {
         lock.lock();
         try {
-            songQueue.setNextSongStarted(time);
+            if (songQueue.entriesSnapshot().stream().anyMatch(e -> e.getSong().id().equals(songId))) {
+                QueueEntry song = songQueue.findSong(songId).get();
+                songQueue.moveToFront(song);
+            }
+            songQueue.setNextSongStarted(time, songId);
         } finally {
             lock.unlock();
         }

@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/queue/**", "/song/**", "/nextsong", "/songfinished", "/static/**", "/css/**", "/startedplaying", "/files/**")
                         .permitAll()
                         .anyRequest().authenticated())
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/nextsong", "/songfinished")) // the game does not send a CSRF token
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/nextsong", "/songfinished", "/startedplaying")) // the game does not send a CSRF token
                 .formLogin(AbstractHttpConfigurer::disable) // we do not use form login
                 .httpBasic(Customizer.withDefaults());
 

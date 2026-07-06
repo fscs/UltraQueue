@@ -32,9 +32,12 @@ public class ApiController {
     }
 
     /** UltraStar anounces that its playing the next song */
-    @GetMapping(value = "/startedplaying", produces = MediaType.TEXT_PLAIN_VALUE)
-    public String startedPlaying() {
-        queueService.setTimeNextSongStartedToCurrentFirst(Instant.now());
+    @PostMapping(value = "/startedplaying",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.TEXT_PLAIN_VALUE)
+    public String startedPlaying(@Valid @RequestBody SongFinishedDto payload) {
+        UUID songId = queueService.resolveSongId(payload.title(),  payload.artist());
+        queueService.setTimeNextSongStartedToCurrentFirst(Instant.now(), songId);
         return "OK";
     }
 

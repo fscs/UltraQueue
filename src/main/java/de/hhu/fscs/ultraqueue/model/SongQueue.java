@@ -61,8 +61,23 @@ public final class SongQueue {
         persist();
     }
 
+    public void moveToFront(QueueEntry entry) {
+        queue.removeIf(e -> e.getSong().id().equals(entry.getSong().id()));
+        queue.add(0, entry);
+
+        for (int i = 0; i < queue.size(); i++) {
+            queue.get(i).setPosition(i + 1);
+        }
+
+        persist();
+    }
+
     public Optional<QueueEntry> findEntry(UUID entryId) {
         return queue.stream().filter(e -> e.getId().equals(entryId)).findFirst();
+    }
+
+    public Optional<QueueEntry> findSong(UUID entryId) {
+        return queue.stream().filter(e -> e.getSong().id().equals(entryId)).findFirst();
     }
 
     public void removeEntry(UUID entryId) {
@@ -133,7 +148,8 @@ public final class SongQueue {
         return nextSongStarted;
     }
 
-    public void setNextSongStarted(Instant nextSongStarted) {
+    public void setNextSongStarted(Instant nextSongStarted, UUID songId) {
+
         this.nextSongStarted = nextSongStarted;
         if (!queue.isEmpty()) {
             this.currentSongLengthSeconds = queue.getFirst().getSong().getLengthSeconds();
