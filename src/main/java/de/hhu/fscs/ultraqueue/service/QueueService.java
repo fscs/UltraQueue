@@ -326,4 +326,12 @@ public class QueueService {
     public void setAllowEditing(boolean allowEditing) {
         this.allowEditing = allowEditing;
     }
+
+    public long addTimeToUsersNextSong(String userId, int timeToWait) {
+        return songQueue.delayEntryForUser(userId, timeToWait);
+    }
+
+    public Song getUsersNextSong(String userId) {
+        return songQueue.getNextSongForUser(userId);
+    }
 }

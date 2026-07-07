@@ -11,6 +11,8 @@
 
 <div class="mb-3">
   <a th:href="@{/queue}" class="btn btn-outline-primary">Currently queued songs</a>
+  <a href="/queue/delay/10" class="btn btn-outline-primary">ca. +10 min</a>
+  <a href="/queue/delay/30" class="btn btn-outline-primary">ca. +30 min</a>
 </div>
 
 <div th:if="${#authorization.expression('hasRole(''ADMIN'')')}" class="d-inline-flex gap-1 ms-2">
@@ -25,6 +27,15 @@
   <span>Queueing as</span>
   <strong class="user-color-label" th:text="${currentUsername}"
           th:style="'--user-color: ' + ${currentUserColor}"></strong>
+</div>
+
+<div th:if="${errorMessage}" class="alert alert-danger d-flex align-items-center gap-2">
+  <span>⚠️</span>
+  <strong th:text="${errorMessage}"></strong>
+</div>
+
+<div th:if="${infoMessage}" class="alert alert-info d-flex align-items-center gap-2">
+  <strong th:text="${infoMessage}"></strong>
 </div>
 
 <div th:unless="${usernameSet}" class="card mb-3">

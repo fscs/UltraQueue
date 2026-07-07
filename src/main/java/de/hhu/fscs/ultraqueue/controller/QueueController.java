@@ -1,6 +1,7 @@
 package de.hhu.fscs.ultraqueue.controller;
 
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
+import de.hhu.fscs.ultraqueue.model.Song;
 import de.hhu.fscs.ultraqueue.service.QueueEventService;
 import de.hhu.fscs.ultraqueue.web.UserContext;
 import de.hhu.fscs.ultraqueue.dto.QueueEntryDto;
@@ -49,6 +50,19 @@ public class QueueController {
         List<QueueEntryDto> entries = queueService.getQueueWithEstimates(userId);
         model.addAttribute("queue", entries);
         return "queue";
+    }
+
+    @GetMapping("/delay/{minutes}")
+    public String delay(@PathVariable int minutes, Model model, HttpServletRequest request,  RedirectAttributes redirectAttributes) {
+        try {
+            long seconds = queueService.addTimeToUsersNextSong(UserContext.getCurrentUserId(request), minutes);
+            Song song = queueService.getUsersNextSong(UserContext.getCurrentUserId(request));
+            redirectAttributes.addFlashAttribute("infoMessage", "Your song (" +  song.title() + " by " + song.artist() + ") was delayed and is now playing in " + seconds/60L + " minutes");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/";
     }
 
     @GetMapping("/beamer")

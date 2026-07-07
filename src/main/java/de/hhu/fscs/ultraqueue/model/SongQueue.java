@@ -180,6 +180,51 @@ public final class SongQueue {
                 new ArrayList<>(queue),
                 new ArrayList<>(playedLog)));
     }
+
+    public long delayEntryForUser(String userId, int delayMinutes) {
+        QueueEntry entryToMove = null;
+        int currentIndex = -1;
+
+        for (int i = 0; i < queue.size(); i++) {
+            QueueEntry entry = queue.get(i);
+
+            if (entry.getUserId().equals(userId)) {
+                entryToMove = entry;
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (entryToMove == null) {
+            throw new BusinessException("You have not queued any Song yet");
+        }
+
+        long accumulatedSeconds = 0;
+        int targetIndex = currentIndex;
+
+        for (int i = currentIndex; i < queue.size(); i++) {
+            accumulatedSeconds += queue.get(i).getSong().getLengthSeconds();
+
+            if (accumulatedSeconds >= delayMinutes * 60L) {
+                targetIndex = i;
+                break;
+            }
+        }
+
+        if (targetIndex != currentIndex) {
+            queue.remove(currentIndex);
+            queue.add(targetIndex, entryToMove);
+            reOrderPositions();
+            persist();
+        }
+
+        return accumulatedSeconds - entryToMove.getSong().getLengthSeconds();
+
+    }
+
+    public Song getNextSongForUser(String userId) {
+        return queue.stream().filter(e -> e.getUserId().equals(userId)).findFirst().get().getSong();
+    }
 }
 
 
