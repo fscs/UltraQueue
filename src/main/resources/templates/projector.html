@@ -12,13 +12,13 @@
 <body class="container-fluid mt-4">
 <div
         hx-ext="sse"
-        sse-connect="/queue/beamer/events">
+        sse-connect="/queue/events">
 
     <div id="queue-container"
          hx-get="/queue/beamer/fragment"
          hx-trigger="sse:queue-update">
 
-        <div th:replace="~{fragments/queue :: queueFragment}"></div>
+        <div th:replace="~{fragments/projector :: queueFragment}"></div>
 
     </div>
 

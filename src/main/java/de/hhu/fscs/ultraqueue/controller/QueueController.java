@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,16 +55,30 @@ public class QueueController {
     public String viewQueueForBeamer(Model model, HttpServletRequest request) {
         List<QueueEntryDto> entries = queueService.getQueueWithEstimates(null);
         model.addAttribute("queue", entries);
-        return "beamer";
+        return "projector";
     }
 
     @GetMapping("/beamer/fragment")
     public String queueFragment(Model model) {
         model.addAttribute("queue", queueService.getQueueWithEstimates(null));
+        return "fragments/projector :: queueFragment";
+    }
+
+    @GetMapping("/fragment")
+    public String fragment(Model model, HttpServletRequest request) {
+        Common.addCurrentUserAttributes(model, request, props);
+
+        String userId = UserContext.getCurrentUserId(request);
+        if (request.isUserInRole(ROLE_PRIVILEGED)) {
+            userId = null;
+        }
+
+        model.addAttribute("queue", queueService.getQueueWithEstimates(userId));
+
         return "fragments/queue :: queueFragment";
     }
 
-    @GetMapping(value = "/beamer/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ResponseBody
     public SseEmitter events() {
         return queueEventService.subscribe();
