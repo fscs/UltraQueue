@@ -17,8 +17,10 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.Normalizer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -41,6 +43,8 @@ public class SongCatalogServiceImpl implements SongCatalogService {
     /** (title‑lowercase, artist‑lowercase) → UUID – gives O(1) lookup for the API */
     private final Map<String, UUID> titleArtistIndex = new ConcurrentHashMap<>();
     private final SongTxtParser songTxtParser;
+
+    private static final Pattern DIACRITICS = Pattern.compile("\\p{M}+");
 
     public SongCatalogServiceImpl(UltraQueueProperties props, SongTxtParser songTxtParser) {
         this.songTxtParser = songTxtParser;
@@ -90,6 +94,16 @@ public class SongCatalogServiceImpl implements SongCatalogService {
                 (artist == null ? "" : artist.toLowerCase(Locale.ROOT).trim());
     }
 
+    private static String normalize(String text) {
+        if (text == null) {
+            return "";
+        }
+
+        String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
+        normalized = DIACRITICS.matcher(normalized).replaceAll("");
+        return normalized.toLowerCase(Locale.ROOT);
+    }
+
     // -----------------------------------------------------------------
     // PUBLIC API implementations
     // -----------------------------------------------------------------
@@ -100,13 +114,10 @@ public class SongCatalogServiceImpl implements SongCatalogService {
 
     @Override
     public Page<Song> search(String query, Pageable pageable) {
-        if (query == null) {
-            query = "";
-        }
-        String preprocessedQuery = query.toLowerCase(Locale.ROOT);
+        String normalizedQuery = normalize(query);
 
         List<Song> filtered = songById.values().stream()
-                .filter(s -> preprocessedQuery.isEmpty() || s.toString().toLowerCase(Locale.ROOT).contains(preprocessedQuery))
+                .filter(s -> normalizedQuery.isEmpty() || normalize(s.toString()).contains(normalizedQuery))
                 .sorted(createComparator(pageable.getSort()))
                 .toList();
 
