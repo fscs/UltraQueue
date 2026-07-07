@@ -173,6 +173,13 @@ public final class SongQueue {
 
         return base.plusSeconds(cumulative);
     }
+
+    public void clear() {
+        queue.clear();
+        repository.saveQueue(new QueueStateRepository.QueueState(
+                new ArrayList<>(queue),
+                new ArrayList<>(playedLog)));
+    }
 }
 
 

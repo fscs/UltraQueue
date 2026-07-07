@@ -13,6 +13,12 @@
   <a th:href="@{/queue}" class="btn btn-outline-primary">Currently queued songs</a>
 </div>
 
+<div th:if="${#authorization.expression('hasRole(''ADMIN'')')}" class="d-inline-flex gap-1 ms-2">
+  <a href="/admin/start" class="btn btn-success">Start</a>
+  <a href="/admin/stop" class="btn btn-danger">Stop</a>
+  <a href="/admin/clear" class="btn btn-secondary">Clear</a>
+</div>
+
 <h1 class="mb-4">Song catalogue</h1>
 
 <div th:if="${usernameSet}" class="alert alert-info d-flex align-items-center gap-2">

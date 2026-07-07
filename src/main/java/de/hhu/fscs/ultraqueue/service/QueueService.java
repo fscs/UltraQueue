@@ -38,6 +38,7 @@ public class QueueService {
     private final ReentrantLock lock = new ReentrantLock(); // protects queue + log
 
     private final SongQueue songQueue;
+    private boolean allowEditing = false;
 
     @Autowired
     public QueueService(UltraQueueProperties props, SongCatalogService catalog,
@@ -56,6 +57,7 @@ public class QueueService {
     public void addSong(String userId, String username, UUID songId, boolean isAdmin) {
         lock.lock();
         try {
+            if (!allowEditing) throw new BusinessException("The Queue has been closed");
             String normalizedUsername = normalizeUsername(username);
             if (!isAdmin && normalizedUsername.equalsIgnoreCase(props.admin().username())) {
                 throw new BusinessException("This username is reserved. Please choose a different one.");
@@ -90,6 +92,7 @@ public class QueueService {
     public void removeEntry(String userId, UUID entryId, boolean isAdmin) {
         lock.lock();
         try {
+            if (!allowEditing) throw new BusinessException("The Queue has been closed");
             QueueEntry entry = findEntry(entryId);
             if (!isAdmin && !entry.getUserId().equals(userId)) {
                 throw new AccessDeniedException("Cannot delete another user’s entry");
@@ -103,6 +106,7 @@ public class QueueService {
     public void replaceEntry(String userId, UUID entryId, UUID newSongId, boolean isAdmin) {
         lock.lock();
         try {
+            if (!allowEditing) throw new BusinessException("The Queue has been closed");
             QueueEntry old = findEntry(entryId);
             if (!old.getUserId().equals(userId) && !isAdmin) {
                 throw new AccessDeniedException("Can replace only your own entry");
@@ -154,7 +158,7 @@ public class QueueService {
         lock.lock();
         try {
             if (songQueue.getNextSong() == null) return "";
-            return songQueue.getNextSong().title() + " " +  songQueue.getNextSong().artist();
+            return songQueue.getNextSong().title() + " " + songQueue.getNextSong().artist();
         } finally {
             lock.unlock();
         }
@@ -308,5 +312,18 @@ public class QueueService {
         } finally {
             lock.unlock();
         }
+    }
+
+    public void clearQueue() {
+        lock.lock();
+        try {
+            songQueue.clear();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void setAllowEditing(boolean allowEditing) {
+        this.allowEditing = allowEditing;
     }
 }
