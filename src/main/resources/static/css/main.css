@@ -1,3 +1,17 @@
+@font-face {
+    font-family: NotoSans;
+    src: url("/static/fonts/NotoSans-Regular.ttf");
+}
+
+@font-face {
+    font-family: NotoColorEmoji;
+    src: url("/static/fonts/NotoColorEmoji-Regular.ttf");
+}
+
+body{
+    font-family: NotoSans, NotoColorEmoji;
+}
+
 button.admin, a.admin {
     border: 2px solid black;
 }
@@ -10,3 +24,4 @@ button.admin, a.admin {
 .own-queue-item {
     font-weight: bold;
 }
+
