@@ -65,14 +65,14 @@ public class QueueController {
         return "redirect:/";
     }
 
-    @GetMapping("/beamer")
+    @GetMapping("/projector")
     public String viewQueueForBeamer(Model model, HttpServletRequest request) {
         List<QueueEntryDto> entries = queueService.getQueueWithEstimates(null);
         model.addAttribute("queue", entries);
         return "projector";
     }
 
-    @GetMapping("/beamer/fragment")
+    @GetMapping("/projector/fragment")
     public String queueFragment(Model model) {
         model.addAttribute("queue", queueService.getQueueWithEstimates(null));
         return "fragments/projector :: queueFragment";
