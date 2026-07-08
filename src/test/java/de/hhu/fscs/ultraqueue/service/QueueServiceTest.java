@@ -74,13 +74,13 @@ class QueueServiceTest {
         assertThat(queueService.getQueueWithEstimates("user1").getFirst().username()).isEqualTo("User One");
         assertThat(queueService.getQueueWithEstimates("user1").getFirst().userColor()).matches("#[0-9a-fA-F]{6}");
 
-        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
+        assertThat(queueService.getNextSongTitleAndArtist()).isEqualTo("Song 1");
         queueService.markFinished(song1.id());
 
-        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 2");
+        assertThat(queueService.getNextSongTitleAndArtist()).isEqualTo("Song 2");
         queueService.markFinished(song2.id());
 
-        assertThat(queueService.getNextSongTitle()).isEmpty();
+        assertThat(queueService.getNextSongTitleAndArtist()).isEmpty();
     }
 
     @Test
@@ -194,7 +194,7 @@ class QueueServiceTest {
 
         queueService.addSong("user1", "User One", song2.id(), false);
 
-        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 2");
+        assertThat(queueService.getNextSongTitleAndArtist()).isEqualTo("Song 2");
     }
 
     @Test
@@ -220,7 +220,7 @@ class QueueServiceTest {
 
         queueService.addSong("user2", "Admin", song1Id, true);
 
-        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
+        assertThat(queueService.getNextSongTitleAndArtist()).isEqualTo("Song 1");
     }
 
     @Test
@@ -230,7 +230,7 @@ class QueueServiceTest {
         queueService.addSong("user2", "User Two", song2.id(), false);
         queueService.markFinished(song1.id());
 
-        assertThat(queueService.getNextSongTitle()).isEqualTo(song2.title());
+        assertThat(queueService.getNextSongTitleAndArtist()).isEqualTo(song2.title());
         assertThat(queueService.getQueueWithEstimates("user1").getFirst().position()).isOne();
     }
 
@@ -271,7 +271,7 @@ class QueueServiceTest {
         when(clock.instant()).thenReturn(fiveMinutesLater);
 
         queueService.addSong("user2", "User Two", song1Id, false);
-        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
+        assertThat(queueService.getNextSongTitleAndArtist()).isEqualTo("Song 1");
     }
 
     @Test
@@ -293,7 +293,7 @@ class QueueServiceTest {
         queueService.removeEntry("userA", entryId, true);
         queueService.addSong("userB", "User B", song2.id(), false);
 
-        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 2");
+        assertThat(queueService.getNextSongTitleAndArtist()).isEqualTo("Song 2");
     }
 
     @Test
@@ -331,7 +331,7 @@ class QueueServiceTest {
         when(clock.instant()).thenReturn(fiveMinutesLater);
 
         queueService.replaceEntry("user2", entryId, song1Id, false);
-        assertThat(queueService.getNextSongTitle()).isEqualTo("Song 1");
+        assertThat(queueService.getNextSongTitleAndArtist()).isEqualTo("Song 1");
     }
 
     @Test

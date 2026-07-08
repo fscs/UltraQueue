@@ -2,6 +2,7 @@ package de.hhu.fscs.ultraqueue.service;
 
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.model.Song;
+import de.hhu.fscs.ultraqueue.parser.SongTxtParser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,6 +27,9 @@ class SongCatalogServiceImplTest {
 
     @TempDir
     Path tempDir;
+
+    @MockitoBean
+    SongTxtParser parser;
 
     @Test
     void testRecursiveScanning() throws IOException {
@@ -46,7 +51,7 @@ class SongCatalogServiceImplTest {
         UltraQueueProperties props = mock(UltraQueueProperties.class);
         when(props.songFolder()).thenReturn(tempDir.toString());
 
-        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props);
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser);
         service.init();
 
         List<Song> songList = service.findAll(Pageable.ofSize(100)).getContent();
@@ -72,7 +77,7 @@ class SongCatalogServiceImplTest {
         UltraQueueProperties props = mock(UltraQueueProperties.class);
         when(props.songFolder()).thenReturn(tempDir.toString());
 
-        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props);
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser);
         service.init();
 
         Song song = service.findAll(Pageable.ofSize(10)).getContent().getFirst();
@@ -87,7 +92,7 @@ class SongCatalogServiceImplTest {
         UltraQueueProperties props = mock(UltraQueueProperties.class);
         when(props.songFolder()).thenReturn(tempDir.toString());
 
-        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props);
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser);
         service.init();
 
         assertThat(service.findLyricsById(UUID.randomUUID())).isEmpty();
@@ -119,7 +124,7 @@ class SongCatalogServiceImplTest {
         UltraQueueProperties props = mock(UltraQueueProperties.class);
         when(props.songFolder()).thenReturn(tempDir.toString());
 
-        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props);
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser);
         service.init();
 
         return service;

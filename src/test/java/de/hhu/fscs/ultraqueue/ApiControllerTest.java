@@ -30,7 +30,7 @@ class ApiControllerTest {
     @Test
     @DisplayName("GET /nextsong returns plain title from service")
     void nextSongReturnsTitle() throws Exception {
-        Mockito.when(queueService.getNextSongTitle()).thenReturn("My Next Song");
+        Mockito.when(queueService.getNextSongTitleAndArtist()).thenReturn("My Next Song");
 
         mvc.perform(get("/nextsong"))
                 .andExpect(status().isOk())

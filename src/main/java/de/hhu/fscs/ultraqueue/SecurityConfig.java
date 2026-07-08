@@ -49,7 +49,9 @@ public class SecurityConfig {
     public SecurityFilterChain publicChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/queue/**", "/song/**", "/nextsong", "/songfinished", "/static/**", "/css/**", "/startedplaying", "/files/**")
+                        .requestMatchers("/files/**", "/queue/beamer" ,"/queue/beamer/**")
+                        .hasAnyRole("ADMIN", "PRIVILEGED")
+                        .requestMatchers("/", "/queue/**", "/song/**", "/nextsong", "/songfinished", "/static/**", "/css/**", "/startedplaying")
                         .permitAll()
                         .anyRequest().authenticated())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/nextsong", "/songfinished", "/startedplaying")) // the game does not send a CSRF token
