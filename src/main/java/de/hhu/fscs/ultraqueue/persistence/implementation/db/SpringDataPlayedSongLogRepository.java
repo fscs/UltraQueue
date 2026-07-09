@@ -9,5 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface SpringDataPlayedSongLogRepository extends CrudRepository<PlayedSongLogDto, UUID> {
+    @Override
     List<PlayedSongLogDto> findAll();
 }
