@@ -13,6 +13,8 @@ import java.util.UUID;
  */
 public interface SongCatalogService {
 
+    void refreshData();
+
     /** Returns a paged list of *all* songs, sorted according to {@code pageable}. */
     Page<Song> findAll(Pageable pageable);
 

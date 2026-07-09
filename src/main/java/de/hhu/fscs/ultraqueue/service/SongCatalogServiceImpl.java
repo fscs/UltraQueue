@@ -3,7 +3,7 @@ package de.hhu.fscs.ultraqueue.service;
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.model.Song;
 import de.hhu.fscs.ultraqueue.parser.SongTxtParser;
-import jakarta.annotation.PostConstruct;
+import de.hhu.fscs.ultraqueue.persistence.SongRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -34,28 +34,22 @@ public class SongCatalogServiceImpl implements SongCatalogService {
 
     private final UltraQueueProperties props;
 
-    /** UUID → Song */
-    private final Map<UUID, Song> songById = new ConcurrentHashMap<>();
-
-    /** UUID -> source txt path for lazy lyrics loading */
-    private final Map<UUID, Path> songTxtById = new ConcurrentHashMap<>();
-
-    /** (title‑lowercase, artist‑lowercase) → UUID – gives O(1) lookup for the API */
-    private final Map<String, UUID> titleArtistIndex = new ConcurrentHashMap<>();
     private final SongTxtParser songTxtParser;
-
     private static final Pattern DIACRITICS = Pattern.compile("\\p{M}+");
 
-    public SongCatalogServiceImpl(UltraQueueProperties props, SongTxtParser songTxtParser) {
+    private final SongRepository songRepository;
+
+    public SongCatalogServiceImpl(UltraQueueProperties props, SongTxtParser songTxtParser, SongRepository songRepository) {
         this.songTxtParser = songTxtParser;
         this.props = props;
+        this.songRepository = songRepository;
     }
 
-    /** -----------------------------------------------------------------
-     *  Scan the folder at application start‑up.
-     *  ----------------------------------------------------------------- */
-    @PostConstruct
-    public void init() {
+
+    @Override
+    public void refreshData() {
+        // fresh read of all songs.
+        songRepository.removeAll();
         Path root = Paths.get(props.songFolder()).toAbsolutePath().normalize();
         log.info("Scanning UltraStar song folder: {}", root);
         if (!Files.isDirectory(root)) {
@@ -70,7 +64,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
             throw new IllegalStateException("Failed to scan song folder", e);
         }
 
-        log.info("Loaded {} songs into the catalogue", songById.size());
+        log.info("Loaded {} songs into the catalogue", songRepository.size());
     }
 
     /** -----------------------------------------------------------------
@@ -79,10 +73,8 @@ public class SongCatalogServiceImpl implements SongCatalogService {
     private void processSongFile(Path txt) {
         try {
             Song song = songTxtParser.parse(txt);
-            songById.put(song.id(), song);
-            songTxtById.put(song.id(), txt);
             String key = makeTitleArtistKey(song.title(), song.artist());
-            titleArtistIndex.put(key, song.id());
+            songRepository.addSong(song, txt, key);
         } catch (Exception e) {
             log.warn("Unable to read song file {} – skipping ({}).", txt, e.getMessage());
         }
@@ -116,7 +108,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
     public Page<Song> search(String query, Pageable pageable) {
         String normalizedQuery = normalize(query);
 
-        List<Song> filtered = songById.values().stream()
+        List<Song> filtered = songRepository.loadAll().stream()
                 .filter(s -> normalizedQuery.isEmpty() || normalize(s.toString()).contains(normalizedQuery))
                 .sorted(createComparator(pageable.getSort()))
                 .toList();
@@ -126,20 +118,20 @@ public class SongCatalogServiceImpl implements SongCatalogService {
 
     @Override
     public Optional<Song> findById(UUID id) {
-        return Optional.ofNullable(songById.get(id));
+        return Optional.ofNullable(songRepository.songById(id));
     }
 
     @Override
     public Optional<Song> findByTitleArtist(String title, String artist) {
         if (title == null || artist == null) return Optional.empty();
         String key = makeTitleArtistKey(title, artist);
-        UUID id = titleArtistIndex.get(key);
+        UUID id = songRepository.songIdByTitleArtist(key);
         return (id == null) ? Optional.empty() : findById(id);
     }
 
     @Override
     public Optional<List<String>> findLyricsById(UUID id) {
-        Path txtPath = songTxtById.get(id);
+        Path txtPath = songRepository.txtById(id);
         if (txtPath == null) {
             return Optional.empty();
         }
