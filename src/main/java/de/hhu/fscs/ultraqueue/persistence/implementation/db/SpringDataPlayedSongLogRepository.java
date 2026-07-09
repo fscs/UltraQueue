@@ -1,6 +1,6 @@
-package de.hhu.fscs.ultraqueue.persistence;
+package de.hhu.fscs.ultraqueue.persistence.implementation.db;
 
-import de.hhu.fscs.ultraqueue.persistence.dto.PlayedSongLogDto;
+import de.hhu.fscs.ultraqueue.persistence.implementation.db.dto.PlayedSongLogDto;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

@@ -8,7 +8,7 @@ import de.hhu.fscs.ultraqueue.exception.NotFoundException;
 import de.hhu.fscs.ultraqueue.model.QueueEntry;
 import de.hhu.fscs.ultraqueue.model.Song;
 import de.hhu.fscs.ultraqueue.model.SongQueue;
-import de.hhu.fscs.ultraqueue.persistence.QueueStateRepository;
+import de.hhu.fscs.ultraqueue.persistence.interfaces.QueueStateRepository;
 import de.hhu.fscs.ultraqueue.web.UserContext;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;

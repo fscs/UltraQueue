@@ -1,6 +1,7 @@
-package de.hhu.fscs.ultraqueue.persistence;
+package de.hhu.fscs.ultraqueue.persistence.implementation.db;
 
 import de.hhu.fscs.ultraqueue.model.Song;
+import de.hhu.fscs.ultraqueue.persistence.interfaces.SongRepository;
 import org.springframework.stereotype.Repository;
 
 import java.nio.file.Path;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public class PersistentSongRepository implements SongRepository{
+public class PersistentSongRepository implements SongRepository {
     @Override
     public Song songById(UUID id) {
         return null;

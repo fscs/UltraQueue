@@ -1,4 +1,4 @@
-package de.hhu.fscs.ultraqueue.persistence;
+package de.hhu.fscs.ultraqueue.persistence.interfaces;
 
 import de.hhu.fscs.ultraqueue.model.PlayedSongLog;
 import de.hhu.fscs.ultraqueue.model.QueueEntry;

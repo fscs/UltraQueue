@@ -3,7 +3,7 @@ package de.hhu.fscs.ultraqueue.service;
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.model.Song;
 import de.hhu.fscs.ultraqueue.parser.SongTxtParser;
-import de.hhu.fscs.ultraqueue.persistence.SongRepository;
+import de.hhu.fscs.ultraqueue.persistence.interfaces.SongRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 

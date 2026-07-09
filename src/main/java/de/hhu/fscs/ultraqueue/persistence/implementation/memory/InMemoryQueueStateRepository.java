@@ -1,9 +1,9 @@
-package de.hhu.fscs.ultraqueue.persistence;
+package de.hhu.fscs.ultraqueue.persistence.implementation.memory;
 
 import de.hhu.fscs.ultraqueue.model.PlayedSongLog;
 import de.hhu.fscs.ultraqueue.model.QueueEntry;
+import de.hhu.fscs.ultraqueue.persistence.interfaces.QueueStateRepository;
 import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;

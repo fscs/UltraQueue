@@ -1,17 +1,18 @@
-package de.hhu.fscs.ultraqueue.persistence;
+package de.hhu.fscs.ultraqueue.persistence.implementation.db;
 
 import de.hhu.fscs.ultraqueue.model.PlayedSongLog;
 import de.hhu.fscs.ultraqueue.model.QueueEntry;
 import de.hhu.fscs.ultraqueue.model.Song;
-import de.hhu.fscs.ultraqueue.persistence.dto.PlayedSongLogDto;
-import de.hhu.fscs.ultraqueue.persistence.dto.QueueEntryDto;
+import de.hhu.fscs.ultraqueue.persistence.implementation.db.dto.PlayedSongLogDto;
+import de.hhu.fscs.ultraqueue.persistence.implementation.db.dto.QueueEntryDto;
+import de.hhu.fscs.ultraqueue.persistence.interfaces.QueueStateRepository;
 import de.hhu.fscs.ultraqueue.service.SongCatalogService;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public class PersistentQueueStateRepository implements QueueStateRepository{
+public class PersistentQueueStateRepository implements QueueStateRepository {
     private final SpringDataQueueEntryRepository springDataQueueEntryRepository;
     private final SpringDataPlayedSongLogRepository springDataPlayedSongLogRepository;
     private final SongCatalogService songCatalogService;

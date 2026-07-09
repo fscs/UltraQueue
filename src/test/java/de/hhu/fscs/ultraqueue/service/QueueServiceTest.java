@@ -4,7 +4,7 @@ import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.config.UltraQueuePropertiesBuilder;
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
 import de.hhu.fscs.ultraqueue.model.Song;
-import de.hhu.fscs.ultraqueue.persistence.InMemoryQueueStateRepository;
+import de.hhu.fscs.ultraqueue.persistence.implementation.memory.InMemoryQueueStateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

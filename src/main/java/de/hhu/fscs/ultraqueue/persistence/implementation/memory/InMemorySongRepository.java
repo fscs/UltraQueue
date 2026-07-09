@@ -1,6 +1,7 @@
-package de.hhu.fscs.ultraqueue.persistence;
+package de.hhu.fscs.ultraqueue.persistence.implementation.memory;
 
 import de.hhu.fscs.ultraqueue.model.Song;
+import de.hhu.fscs.ultraqueue.persistence.interfaces.SongRepository;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
@@ -12,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Primary
 @Repository
-public class InMemorySongRepository implements SongRepository{
+public class InMemorySongRepository implements SongRepository {
     /** UUID → Song */
     private final Map<UUID, Song> songById = new ConcurrentHashMap<>();
 

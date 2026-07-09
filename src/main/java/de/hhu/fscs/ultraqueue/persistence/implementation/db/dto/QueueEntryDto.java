@@ -1,6 +1,5 @@
-package de.hhu.fscs.ultraqueue.persistence.dto;
+package de.hhu.fscs.ultraqueue.persistence.implementation.db.dto;
 
-import de.hhu.fscs.ultraqueue.model.QueueEntry;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;

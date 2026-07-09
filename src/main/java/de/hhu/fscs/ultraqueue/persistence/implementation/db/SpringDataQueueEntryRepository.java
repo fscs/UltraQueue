@@ -1,6 +1,6 @@
-package de.hhu.fscs.ultraqueue.persistence;
+package de.hhu.fscs.ultraqueue.persistence.implementation.db;
 
-import de.hhu.fscs.ultraqueue.persistence.dto.QueueEntryDto;
+import de.hhu.fscs.ultraqueue.persistence.implementation.db.dto.QueueEntryDto;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;
