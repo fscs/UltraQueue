@@ -24,7 +24,7 @@ public class InMemorySongRepository implements SongRepository{
 
     @Override
     public Song songById(UUID id) {
-        return null;
+        return songById.get(id);
     }
 
     @Override
