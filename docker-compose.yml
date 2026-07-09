@@ -29,6 +29,8 @@ services:
       - "DATABASEPASSWORD=knutsdbpassword"
     ports:
       - "8080:8080"
+    volumes:
+      - "~/.ultrastardx/songs:/ultrastardx/songs:ro"
     depends_on:
       database:
         condition: service_healthy
