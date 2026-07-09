@@ -101,7 +101,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
 
         String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
         normalized = DIACRITICS.matcher(normalized).replaceAll("");
-        return normalized.toLowerCase(Locale.ROOT);
+        return normalized.toLowerCase(Locale.ROOT).trim();
     }
 
     // -----------------------------------------------------------------
