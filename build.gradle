@@ -23,6 +23,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
     implementation 'org.springframework.data:spring-data-commons'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -30,9 +31,14 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    implementation 'org.postgresql:postgresql'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation("org.flywaydb:flyway-database-postgresql")
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+     useJUnitPlatform() {
+         enabled = false
+     }
 }

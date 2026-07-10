@@ -1,7 +1,7 @@
 package de.hhu.fscs.ultraqueue.model;
 
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
-import de.hhu.fscs.ultraqueue.persistence.QueueStateRepository;
+import de.hhu.fscs.ultraqueue.persistence.interfaces.QueueStateRepository;
 
 import java.time.Duration;
 import java.time.Instant;

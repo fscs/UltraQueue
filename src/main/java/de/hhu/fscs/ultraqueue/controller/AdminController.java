@@ -3,6 +3,7 @@ package de.hhu.fscs.ultraqueue.controller;
 import de.hhu.fscs.ultraqueue.config.UltraQueueProperties;
 import de.hhu.fscs.ultraqueue.service.QueueEventService;
 import de.hhu.fscs.ultraqueue.service.QueueService;
+import de.hhu.fscs.ultraqueue.service.SongCatalogService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,10 +15,12 @@ public class AdminController {
 
     private final QueueService queueService;
     private final QueueEventService queueEventService;
+    private final SongCatalogService songCatalogService;
 
-    public AdminController(QueueService queueService, QueueEventService queueEventService) {
+    public AdminController(QueueService queueService, QueueEventService queueEventService, SongCatalogService songCatalogService) {
         this.queueService = queueService;
         this.queueEventService = queueEventService;
+        this.songCatalogService = songCatalogService;
     }
     @GetMapping(value = "", produces = MediaType.TEXT_PLAIN_VALUE)
     public String login() {
@@ -42,5 +45,11 @@ public class AdminController {
         queueService.clearQueue();
         queueEventService.notifyQueueChanged();
         return "<script>alert('The Queue has been cleared'); history.back();</script>";
+    }
+
+    @GetMapping(value = "/refresh", produces = MediaType.TEXT_HTML_VALUE)
+    public String refreshData() {
+        songCatalogService.refreshData();
+        return "<script>alert('The Data has been refreshed'); history.back();</script>";
     }
 }

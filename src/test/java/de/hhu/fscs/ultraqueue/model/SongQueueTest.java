@@ -1,7 +1,7 @@
 package de.hhu.fscs.ultraqueue.model;
 
 import de.hhu.fscs.ultraqueue.exception.BusinessException;
-import de.hhu.fscs.ultraqueue.persistence.InMemoryQueueStateRepository;
+import de.hhu.fscs.ultraqueue.persistence.implementation.memory.InMemoryQueueStateRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

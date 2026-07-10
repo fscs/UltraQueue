@@ -1,5 +1,7 @@
 package de.hhu.fscs.ultraqueue.model;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Objects;
@@ -29,7 +31,6 @@ public record Song(
     }
 
     public static class Builder {
-        private final UUID id = UUID.randomUUID();
         private String title;
         private String artist;
         private String language;
@@ -74,9 +75,10 @@ public record Song(
         }
 
         public Song build() {
-            return new Song(id, title, artist, language, year, length, genre, coverPath);
+            return new Song(Common.uuidFromFields(title,artist,language,year,length,genre), title, artist, language, year, length, genre, coverPath);
         }
     }
+
 
     // -----------------------------------------------------------------
     // Convenience methods for UI / API

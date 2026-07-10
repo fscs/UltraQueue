@@ -51,8 +51,8 @@ class SongCatalogServiceImplTest {
         UltraQueueProperties props = mock(UltraQueueProperties.class);
         when(props.songFolder()).thenReturn(tempDir.toString());
 
-        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser);
-        service.init();
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser, null);
+        service.refreshData();
 
         List<Song> songList = service.findAll(Pageable.ofSize(100)).getContent();
 
@@ -77,8 +77,8 @@ class SongCatalogServiceImplTest {
         UltraQueueProperties props = mock(UltraQueueProperties.class);
         when(props.songFolder()).thenReturn(tempDir.toString());
 
-        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser);
-        service.init();
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser, null);
+        service.refreshData();
 
         Song song = service.findAll(Pageable.ofSize(10)).getContent().getFirst();
         var lyrics = service.findLyricsById(song.id());
@@ -92,8 +92,8 @@ class SongCatalogServiceImplTest {
         UltraQueueProperties props = mock(UltraQueueProperties.class);
         when(props.songFolder()).thenReturn(tempDir.toString());
 
-        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser);
-        service.init();
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser, null);
+        service.refreshData();
 
         assertThat(service.findLyricsById(UUID.randomUUID())).isEmpty();
     }
@@ -124,8 +124,8 @@ class SongCatalogServiceImplTest {
         UltraQueueProperties props = mock(UltraQueueProperties.class);
         when(props.songFolder()).thenReturn(tempDir.toString());
 
-        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser);
-        service.init();
+        SongCatalogServiceImpl service = new SongCatalogServiceImpl(props, parser, null);
+        service.refreshData();
 
         return service;
     }
