@@ -14,7 +14,6 @@ import java.util.List;
  * In-memory implementation of queue state persistence.
  * State is lost on application restart.
  */
-@Primary
 @Repository
 public class InMemoryQueueStateRepository implements QueueStateRepository {
 

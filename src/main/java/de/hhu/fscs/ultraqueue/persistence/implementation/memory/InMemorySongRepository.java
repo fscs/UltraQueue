@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Primary
 @Repository
 public class InMemorySongRepository implements SongRepository {
     /** UUID → Song */

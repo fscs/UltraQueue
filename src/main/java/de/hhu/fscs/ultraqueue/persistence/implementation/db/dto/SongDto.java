@@ -13,7 +13,7 @@ public record SongDto (
         String artist,
         String language, // optional, may be empty
         Integer year,    // optional, may be null
-        Duration length, // length of the song in seconds (rounded)
+        int length, // length of the song in seconds (rounded)
         String genre,
         String titleArtist
 )

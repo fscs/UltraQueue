@@ -7,23 +7,26 @@ import de.hhu.fscs.ultraqueue.persistence.implementation.db.dto.PlayedSongLogDto
 import de.hhu.fscs.ultraqueue.persistence.implementation.db.dto.QueueEntryDto;
 import de.hhu.fscs.ultraqueue.persistence.implementation.db.dto.SongDto;
 import de.hhu.fscs.ultraqueue.persistence.interfaces.QueueStateRepository;
+import de.hhu.fscs.ultraqueue.persistence.interfaces.SongRepository;
 import de.hhu.fscs.ultraqueue.service.SongCatalogService;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
 
+@Primary
 @Repository
 public class PersistentQueueStateRepository implements QueueStateRepository {
     private final SpringDataQueueEntryRepository springDataQueueEntryRepository;
     private final SpringDataPlayedSongLogRepository springDataPlayedSongLogRepository;
-    private final SongCatalogService songCatalogService;
+    private final SongRepository songRepository;
 
-    public PersistentQueueStateRepository(SpringDataQueueEntryRepository springDataQueueEntryRepository, SpringDataPlayedSongLogRepository springDataPlayedSongLogRepository, SongCatalogService songCatalogService) {
+    public PersistentQueueStateRepository(SpringDataQueueEntryRepository springDataQueueEntryRepository, SpringDataPlayedSongLogRepository springDataPlayedSongLogRepository, SongRepository songRepository) {
         this.springDataQueueEntryRepository = springDataQueueEntryRepository;
         this.springDataPlayedSongLogRepository = springDataPlayedSongLogRepository;
-        this.songCatalogService = songCatalogService;
+        this.songRepository = songRepository;
     }
 
     @Override
@@ -56,13 +59,13 @@ public class PersistentQueueStateRepository implements QueueStateRepository {
 
         springDataQueueEntryRepository.deleteAll();
 
-        entryDtos.forEach(springDataQueueEntryRepository::save);
+        entryDtos.forEach(springDataQueueEntryRepository::addQueueEntry);
         logDtos.forEach(springDataPlayedSongLogRepository::save);
     }
 
     private QueueEntry DtoToQueueEntry(QueueEntryDto dto) {
-        Song song = songCatalogService.findById(dto.id()).orElseThrow(() -> new IllegalStateException("song in database not found in catalog"));
-        return new QueueEntry(dto.id(), song, dto.userId(), dto.username(), dto.userColor(), dto.position());
+            Song song = songRepository.songById(dto.songId().getId());
+            return new QueueEntry(dto.id(), song, dto.userId(), dto.username(), dto.userColor(), dto.position());
     }
 
     private QueueEntryDto QueueEntryToDto(QueueEntry entry) {
@@ -76,7 +79,6 @@ public class PersistentQueueStateRepository implements QueueStateRepository {
     }
 
     private PlayedSongLogDto PlayedSongLogToDto(PlayedSongLog log) {
-        UUID logId = log.logId() != null ? log.logId() : UUID.randomUUID();
-        return new PlayedSongLogDto(logId, log.songId(), log.playedAt());
+        return new PlayedSongLogDto(log.logId(), log.songId(), log.playedAt());
     }
 }

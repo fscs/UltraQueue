@@ -47,6 +47,7 @@ public class SongCatalogServiceImpl implements SongCatalogService {
 
     @Override
     public void refreshData() {
+        log.info("repository {}", songRepository.getClass());
         // fresh read of all songs.
         songRepository.removeAll();
         Path root = Paths.get(props.songFolder()).toAbsolutePath().normalize();

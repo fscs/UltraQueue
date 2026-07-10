@@ -3,13 +3,15 @@ package de.hhu.fscs.ultraqueue.persistence.implementation.db;
 import de.hhu.fscs.ultraqueue.model.Song;
 import de.hhu.fscs.ultraqueue.persistence.implementation.db.dto.SongDto;
 import de.hhu.fscs.ultraqueue.persistence.interfaces.SongRepository;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
+@Primary
 @Repository
 public class PersistentSongRepository implements SongRepository {
 
@@ -42,7 +44,8 @@ public class PersistentSongRepository implements SongRepository {
     @Override
     public void addSong(Song song, Path txt, String titleArtistKey) {
         // ignore path, see above
-        springDataSongRepository.save(SongToDto(song, titleArtistKey));
+        SongDto dto = SongToDto(song, titleArtistKey);
+        springDataSongRepository.addSong(dto);
     }
 
     @Override
@@ -60,10 +63,10 @@ public class PersistentSongRepository implements SongRepository {
 
     private Song DtoToSong(SongDto dto) {
         if(dto == null) return null;
-        return new Song(dto.songId(), dto.title(), dto.artist(), dto.language(), dto.year(), dto.length(), dto.genre(), null);
+        return new Song(dto.songId(), dto.title(), dto.artist(), dto.language(), dto.year(), Duration.ofSeconds((long) dto.length()), dto.genre(), null);
     }
 
     private SongDto SongToDto(Song song, String titleAndArtist) {
-        return new SongDto(song.id(), song.title(), song.artist(), song.language(), song.year(), song.length(), song.genre(), titleAndArtist);
+        return new SongDto(song.id(), song.title(), song.artist(), song.language(), song.year(), (int) song.length().getSeconds(), song.genre(), titleAndArtist);
     }
 }

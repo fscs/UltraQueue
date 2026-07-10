@@ -9,7 +9,7 @@ import java.util.UUID;
 @Table("queue_entries")
 public record QueueEntryDto (
        @Id UUID id,
-       AggregateReference<SongDto, UUID> songid,
+       AggregateReference<SongDto, UUID> songId,
        String userId,
        String username,
        String userColor,
