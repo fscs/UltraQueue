@@ -15,15 +15,17 @@
             <div class="d-flex flex-column justify-content-center align-items-center"
                  th:object="${queue.getFirst()}">
 
+                <h1 class="mt-3 text-center"
+                    th:text="*{title}"></h1>
+
+                <span class="h2 text-center"
+                      th:text="*{artist}"></span>
+
                 <img class="mt-5"
                      th:src="*{coverPath}"
                      width="80%">
 
-                <h2 class="mt-5 text-center"
-                    th:text="*{title}"></h2>
-
-                <span class="h4 text-center"
-                      th:text="*{artist}"></span>
+                <span class="h4 mt-5 text-center">Queued by: </span>
 
                 <span class="h4 text-center"
                       th:text="*{username}"></span>
