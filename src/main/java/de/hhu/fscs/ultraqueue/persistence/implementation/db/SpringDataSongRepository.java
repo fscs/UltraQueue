@@ -28,7 +28,8 @@ public interface SpringDataSongRepository extends CrudRepository<SongDto, UUID> 
              year,
              length,
              genre,
-             title_artist)
+             title_artist,
+             cover_path)
         VALUES
             (:#{#dto.songId},
              :#{#dto.title},
@@ -37,7 +38,8 @@ public interface SpringDataSongRepository extends CrudRepository<SongDto, UUID> 
              :#{#dto.year},
              :#{#dto.length},
              :#{#dto.genre},
-             :#{#dto.titleArtist})
+             :#{#dto.titleArtist},
+             :#{#dto.coverPath})
         """)
     void addSong(SongDto dto);
 }

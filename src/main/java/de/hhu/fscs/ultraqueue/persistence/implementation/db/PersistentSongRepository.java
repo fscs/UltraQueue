@@ -63,10 +63,10 @@ public class PersistentSongRepository implements SongRepository {
 
     private Song DtoToSong(SongDto dto) {
         if(dto == null) return null;
-        return new Song(dto.songId(), dto.title(), dto.artist(), dto.language(), dto.year(), Duration.ofSeconds((long) dto.length()), dto.genre(), null);
+        return new Song(dto.songId(), dto.title(), dto.artist(), dto.language(), dto.year(), Duration.ofSeconds((long) dto.length()), dto.genre(), dto.coverPath());
     }
 
     private SongDto SongToDto(Song song, String titleAndArtist) {
-        return new SongDto(song.id(), song.title(), song.artist(), song.language(), song.year(), (int) song.length().getSeconds(), song.genre(), titleAndArtist);
+        return new SongDto(song.id(), song.title(), song.artist(), song.language(), song.year(), (int) song.length().getSeconds(), song.genre(), titleAndArtist, song.coverPath());
     }
 }

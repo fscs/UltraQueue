@@ -15,7 +15,7 @@
         sse-connect="/queue/events">
 
     <div id="queue-container"
-         hx-get="/queue/beamer/fragment"
+         hx-get="/queue/projector/fragment"
          hx-trigger="sse:queue-update">
 
         <div th:replace="~{fragments/projector :: queueFragment}"></div>

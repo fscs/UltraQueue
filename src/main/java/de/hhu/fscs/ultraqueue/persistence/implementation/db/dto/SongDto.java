@@ -15,7 +15,8 @@ public record SongDto (
         Integer year,    // optional, may be null
         int length, // length of the song in seconds (rounded)
         String genre,
-        String titleArtist
+        String titleArtist,
+        String coverPath
 )
 
 {
